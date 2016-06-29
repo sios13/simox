@@ -1,0 +1,449 @@
+﻿<div class="col-md-8 col-md-offset-2">
+
+<h1>Simox</h1>
+<p>Simox är ett MVC webbramverk skrivet i PHP. Simox skapades med inspiration från Phalcon, Laravel och Jekyll.</p>
+<p><span style="color:red; font-weight:bold;">Använd Simox på egen risk!</span> Säkerhetshål och buggar kan finnas och kommer kanske aldrig att fixas.</p>
+<p><a href="">Ladda ner Simox</a></p>
+<p>För att se ett exempel hur Simox kan fungera i en webbapplikation, se mitt projekt <a href="<?php echo $this->url->get( "project/simoxbook" ); ?>">Simoxbook</a>.</p>
+
+<h2>Dokumentation</h2>
+<h3>Komma igång</h3>
+<p>Att komma igång med Simox är enkelt. Ladda ner Simox och packa upp mappen Simox i roten av din webb-mapp. Besök "<i>din-mapp</i>/simox" i din webbläsare och du bör se Simoxs startsida.</p>
+<h3>index.php</h3>
+<p>I public/index.php laddas objekt in i applikationen och det stora Simox-objektet skapas. Till Simox-objektet laddas automatiskt flera objekt.</p>
+<p>För att anpassa Simox till din applikation kan du ändra vissa inställningar i objekten. Vill du exempelvis ändra namnet på mappen som applikationen ligger i kan du göra följande.</p>
+<pre>
+use Simox\Url;
+
+// ..
+
+$simox->set( "url", function() {
+    $url = new Url();
+    $url->setBaseUri( "/min-coola-applikation/" );
+    return $url;
+} );
+</pre>
+<p>Simox använder sig av namnrymder (<i>namespaces</i>). För varje objekt som används i public/index.php måste man skriva "use Simox/<i>objekt</i>". Alltså, vill du göra en inställning i url-objektet, skriv "use Simox/Url" överst i public/index.php</p>
+<p>För att ändra vilken mapp vyerna finns i kan man göra så här.</p>
+<pre>
+use Simox\View;
+
+// ..
+
+$simox->set( "view", function() {
+    $view = new View();
+    $view->setViewsDir( "../app/views/" );
+    return $view;
+} );
+</pre>
+<p>Om du vill koppla upp din applikation till en databas kan du göra det på följande sätt.</p>
+<pre>
+use Simox\Database\Sqlite as SqliteConnection;
+
+// ..
+
+$simox->set( "database", function() {
+    $connection = new SqliteConnection(array(
+        "dbname" => "db.db"
+    ));
+    return $connection;
+} );
+</pre>
+<p>I exemplet ovan används adaptern Sqlite för att koppla upp till databasen. Databas-filen läggs i public/<i>min-databas-fil</i>. Vill du istället använda Mysql kan du göra det på följande sätt.</p>
+<pre>
+use Simox\Database\Mysql as MysqlConnection;
+
+// ..
+
+$simox->set( "database", function() {
+    $connection = new MysqlConnection(array(
+        "host" => "",
+        "username" => "",
+        "password" => "",
+        "dbname" => "",
+        "port" => "",
+    ));
+    return $connection;
+} );
+</pre>
+<p>Tänk på att samtliga inställningar du gör i objekten måste göras efter att Simox-objektet skapas.</p>
+<h3>Routes</h3>
+<p>För att lägga till "routes" i din applikation modifierar du router-objektet i public/index.php på följande sätt.</p>
+<pre>
+use Simox\Router;
+
+// ..
+
+$simox->set( "router", function() {
+    $router = new Router();
+    $router->addRoute( "GET", "/", "IndexController#indexAction" );
+    $router->addRoute( "GET", "/blog", "BlogController#indexAction" );
+    $router->addRoute( "GET", "/blog/{param}", "BlogController#showAction" );
+    return $router;
+} );
+</pre>
+<p>Parametrar används på följande sätt i en route.</p>
+<pre>
+$router->addRoute( "GET", "/blog/{param}", "BlogController#showAction" );
+</pre>
+<p>{param} innebär parameter. Parametern skickas till actionen i controllern.</p>
+
+<h3>Controllers</h3>
+<p>I app/controllers läggs alla controllers för applikationen. Med Simox kan du namnge dina controllers vad du vill, se bara till att dina routes pekar på din controller.</p>
+<p>Exempel på en controller.</p>
+<pre>
+use Simox\Controller;
+
+class IndexController extends Controller
+{
+    public function initialize()
+    {
+        $this->tag->prependTitle( " - " );
+        $this->tag->appendTitle( "simonwebb.se" );
+        
+        $this->view->setMainView( "default" );
+    }
+    
+    public function indexAction()
+    {
+        $this->tag->setTitle( "Billiga hemsidor" );
+        $this->view->pick( "index" );
+    }
+}
+</pre>
+<p><i>initialize</i> kallas före varje action och anger "globala" inställningar för kontrollern.</p>
+<p>Ett tips är att skapa en BaseController.php som alla controllers kan ärva från, detta kan göra din kod lite mer DRY.</p>
+
+<h3>Views</h3>
+<p>Vyer läggs (med normalinställningar) i app/views. I Simox namnges alla vyer med filändelsen <i>.phtml</i>.</p>
+<p>I Simox finns det fem nivåer av vyer. Dessa vyer kallar jag för:</p>
+<ul>
+    <li>Main view</li>
+    <li>Before controller view</li>
+    <li>Controller view</li>
+    <li>After controller view</li>
+    <li>Action view</li>
+</ul>
+<p>Hur du använder dessa vyer är helt upp tid dig.</p>
+<p>Vyerna renderas iterativt. Om en vy i en nivå inte har skapats renderas nästa nivå istället.</p>
+<h4>Main view</h4>
+<p>För att skapa en huvudvy (<i>Main view</i>) kan man skriva följande kod till View-modulen.</p>
+<pre>
+use Simox\View;
+
+// ..
+
+$simox->set( "view", function() {
+    $view = new View();
+    $view->setMainView( "default" );
+    return $view;
+} );
+</pre>
+<p>Det går också bra att ange en huvudvy i controllern på följande sätt.</p>
+<pre>
+$this->view->setMainView( "default" );
+</pre>
+<p>Huvudvy-filen läggs alltid direkt i vy-mappen. Detta är ett exempel på hur en huvudvy kan se ut.</p>
+<pre>
+&lt;html lang="sv-se">
+    &lt;head>
+        &lt;meta charset="utf-8">
+        &lt;?php echo $this->tag->stylesheetLinks(); ?>
+        &lt;?php echo $this->tag->getTitle(); ?>
+    &lt;/head>
+    &lt;body>
+        &lt;header>&lt;/header>
+        &lt;main>&lt;?php echo $this->getContent(); ?>&lt;/main>
+        &lt;footer>&lt;/footer>
+    &lt;/body>
+&lt;/html>
+</pre>
+<p>Vid &lt;?php echo $this->getContent(); ?> renderas nästa vy-nivå.</p>
+<p>Main view är tänkt att vara gryndvyn som visar det som är gemensamt över hela webbplatsen.</p>
+<h4>Controller view</h4>
+<p><i>Controller view</i> är vyn för kontrollen. Tanken är att Controller view ska vara gemensam för alla actions i en controller.</p>
+<h4>Before controller view och After controller view</h4>
+<p>Tanken med att ha en vy före och en vy efter Controller view är att göra det lättare att skapa exempelvis ett navigationssystem som är gemensam för flera kontrollers eller actions, men som inte är gemensam för alla kontrollers eller actions.</p>
+<p>För att skapa en vy före eller efter Controller view skriver man $this->view->setBeforeControllerView( "my-view" ) respektive $this->view->setAfterControllerView( "my-view" ). Dessa vyer läggs alltid i en mapp <i>layouts</i> i vymappen.</p>
+<h4>Action view</h4>
+<p>Den sista vynivån är Action view. Action view är unik för varje action. Alla action views läggs i mappen <i>posts</i>. I controllern väljer du vy genom att skriva $this->view->pick( "en-bloggpost" ).</p>
+<p>I alla vyer har du tillgång till objekten <i>tag</i>, <i>flash</i> och <i>url</i>.</p>
+<h4>Inaktivera en vynivå</h4>
+<p>Det går bra att inaktivera en eller flera vynivåer. Detta kan vara användbart om du exempelvis bara vill skriva ut Action view. För att inaktivera vynivåer gör du på föjande sätt.</p>
+<pre>
+$this->view->disableLevel( array(
+    "DISABLE_LEVEL_MAIN",
+    "DISABLE_LEVEL_BEFORE_CONTROLLER",
+    "DISABLE_LEVEL_CONTROLLER",
+    "DISABLE_LEVEL_AFTER_CONTROLLER"
+) );
+</pre>
+
+<h3>Modeller</h3>
+<h4>Koppla upp till en databas</h4>
+<p>Med Simox går det att skapa modeller av databaser. Simox har stöd för användning av Mysql och Sqlite.</p>
+<p>För att koppla upp din applikation till en Mysql-databas ändrar du inställningar i databas-objektet i public/index.php på följande sätt.</p>
+<pre>
+use Simox\Database\Mysql as MysqlConnection;
+
+// ..
+
+$simox->set( "database", function() {
+    $connection = new MysqlConnection(array(
+        "host" => "",
+        "username" => "",
+        "password" => "",
+        "dbname" => "",
+        "port" => "",
+    ));
+    return $connection;
+} );
+</pre>
+<p>Vill du istället koppla upp dig till en Sqlite-databas gör du på följande sätt.</p>
+<pre>
+use Simox\Database\Sqlite as SqliteConnection;
+
+// ..
+
+$simox->set( "database", function() {
+    $connection = new SqliteConnection(array(
+        "dbname" => "db.db"
+    ));
+    return $connection;
+} );
+</pre>
+<p>Databas-filen läggs i public/<i>min-databas-fil</i>.</p>
+<h4>Skapa en modell</h4>
+<p>Alla modeller läggs i app/models. Här följer ett exempel på hur en modell Users.php kan se ut.</p>
+<pre>
+&lt;?php
+
+use Simox\Model;
+
+class Users extends Model
+{
+    public $id;
+    public $name;
+    public $password;
+    public $email;
+    public $active;
+    public $date;
+}
+</pre>
+<p>Alla modeller ärver Model objektet.</p>
+<p>Modellen och tabellen i databasen måste alltid ha samma namn.</p>
+<h4>Skapa en modell i kontrollen</h4>
+<p>I kontrollen skriver man på följande sätt för att instansera en modell.</p>
+<pre>
+$user = Users::find( "WHERE name=:name", array("name" => "simon") );
+</pre>
+<p>Första parametern är sql. Andra parametern är "bind" som knyter värden till variablar som används i sql. Funktionen find() returnerar en array av objekt.</p>
+<h4>Modellen i vyn</h4>
+<p>För att nå modellen i vyn måste vi skicka modellobjektet från kontrollen till vyn.</p>
+<pre>
+$this->view->user = $user;
+</pre>
+<p>Nu går det att komma åt modellobjektet från vyn.</p>
+<pre>
+Hej! Jag heter &lt;?php echo $this->user->name; ?>!
+</pre>
+<h4>Spara modell i databasen</h4>
+<p>För att skapa och spara en modell i databasen går det att göra på följande sätt.</p>
+<pre>
+$user = new Users();
+$user->name = "simon";
+$user->password = "hemligt";
+$user->save();
+</pre>
+<p>I exemplet ovan läggs en ny rad till i tabellen Users.</p>
+
+<h3>Plugins</h3>
+<p>Simox har stöd för plugins. Med plugins kan man "lägga till" extra kod för att utöka funktionaliteten för applikationen. En funktionalitet som går att skapa med plugins är autentisering, ett sätt för användare att kunna "logga in" i applikationen.</p>
+<p>I Simox källkod finns "lyssnare", vid dessa lyssnare kan man referera till ett plugin. Här följer ett exempel där ett plugin läggs till i objektet Dispatcher.</p>
+<pre>
+use Simox\Dispatcher;
+
+// ..
+
+$simox->set( "dispatcher", function() {
+    $events_manager = new EventsManager();
+    $events_manager->attach( "dispatch:beforeDispatch", new SecurityPlugin() );
+    
+    $dispatcher = new Dispatcher();
+    $dispatcher->setEventsManager( $events_manager );
+    return $dispatcher;
+} );
+</pre>
+<p>I exemplet läggs ett plugin "SecurityPlugin" till vid lyssnaren "dispatch:beforeDispatch" i objektet Dispatcher.</p>
+<p>Alla plugins läggs i app/plugins. I följande exempel visas SecurityPlugin.php.</p>
+<pre>
+&lt;?php
+
+use Simox\Plugin;
+use Simox\Dispatcher;
+use Simox\Acl as AclList;
+
+class SecurityPlugin extends Plugin
+{
+    private function _getAcl()
+    {
+        $acl = new AclList();
+        
+        $acl->setDefaultAction( AclList::DENY );
+        
+        $acl->addRole( "Guest" );
+        $acl->addRole( "User" );
+        
+        $private_resources = array(
+            "index" => array("secret")
+        );
+        foreach ( $private_resources as $resource => $action )
+        {
+            $acl->addResource( $resource, $action );
+        }
+        
+        $public_resources = array(
+            "index" => array("index"),
+            "user" => array("login")
+        );
+        foreach ( $public_resources as $resource => $action )
+        {
+            $acl->addResource( $resource, $action );
+        }
+        
+        $acl->allow( "Guest", "index", "index" );
+        $acl->allow( "Guest", "user", "login" );
+        
+        $acl->allow( "User", "index", "index" );
+        $acl->allow( "User", "index", "secret" );
+        
+        return $acl;
+    }
+    
+    public function beforeDispatch( Dispatcher $dispatcher )
+    {
+        $auth = $this->session->get( "auth" );
+        if (!$auth)
+        {
+            $role = "Guest";
+        }
+        else
+        {
+            $role = "User";
+        }
+        
+        $controller = $dispatcher->getControllerName();
+        $action = $dispatcher->getActionName();
+        
+        $acl = $this->_getAcl();
+        
+        $allowed = $acl->isAllowed( $role, $controller, $action );
+        if ( $allowed != AclList::ALLOW )
+        {
+            $this->flash->error( "Du har inte tillgång till denna sida." );
+            $dispatcher->forward( array("controller" => "index", "action" => "index") );
+        }
+    }
+}
+</pre>
+<p>SecurityPlugin.php är inspirerat av, och fungerar på liknande sätt som, SecurityPlugin.php i Phalcons dokumentation. <a href="https://docs.phalconphp.com/en/latest/reference/tutorial-invo-2.html">https://docs.phalconphp.com/en/latest/reference/tutorial-invo-2.html</a></p>
+<p>SecurityPlugin.php har i uppgift att kolla om en användare är en inloggad "User" eller en inte inloggad "Guest". User och Guest är två roller som har tillgång till olika Controller/Actions.</p>
+<p>Objektet Acl (<i>Access Controll Lists</i>) håller koll på vilka roller som finns och vilka controller/actions en roll har tillgång till.</p>
+
+<h3>Flash</h3>
+<p>Flash är bra att använda om du vill visa meddelanden för användaren, exempelvis "Grattis! Ditt konto har registrerats." eller "Error! Fel lösenord!".</p>
+<p>Det finns fyra typer av meddelanden; success, error, notice och warning.</p>
+<p>För att skrivet i flash gör man på följande sätt i controllern.</p>
+<pre>
+$this->flash->success( "Grattis! Ditt konto har registrerats." );
+</pre>
+<pre>
+$this->flash->error( "Error! Fel lösenord!" );
+</pre>
+<p>För att skriva ut flash gör man på följande sätt i vyn.</p>
+<pre>
+&lt;?php echo $this->flash->output(); ?>
+</pre>
+
+<h3>Cache</h3>
+<p>Med Simox går det att spara vyfragment i cache. Att använda sig av en cache kan snabba upp din webbplats.</p>
+<p>Skriv såhär i din action:</p>
+<pre>
+public function indexAction()
+{
+    $this->tag->setTitle( "Billiga hemsidor" );
+    
+    $this->view->enableCache( array("key" => "index-cache", "lifetime" => 172800, "level" => 5) );
+}
+</pre>
+<p>"key" anger vad den resulterade filen kommer att heta i cachen. Alla cachefiler sparas i mappen app/cache. Om du vill använda cache i flera actions bör din key vara unik, annars kommer två actions att dela på samma cachefil.</p>
+<p>Lifetime anger i sekunder hur länge cachen kommer att leva.</p>
+<p>Level anger från vilken vynivå som vyn ska rendera till cachen. Med en level på 5 kommer vyn rendera hela sidan till cache, alltså alla vynivåer 5 -> 1. Med en vynivå 3 kommer vynivåer 5 -> 4 renderas som vanligt medan vynivåer 3 -> 1 läses från cache.</p>
+
+<h3>Örvigt</h3>
+<p>Några småsaker som kan vara bra att veta.</p>
+<h4>Forward</h4>
+<p>Ibland kan det vara bra att kunna berätta för dispatchern att exekvera en annan kontroller/action. Här följer ett exempel på hur du kan göra.</p>
+<pre>
+public function loginAction()
+{
+	$this->tag->setTitle( "Logga in" );
+	$this->view->pick( "user/login" );
+	
+	if ( $this->request->isPost() )
+	{
+		$username = $this->request->getPost( "username" );
+		$password = $this->request->getPost( "password" );
+		
+		$users = Users::find( "WHERE username=:username AND password=:password LIMIT 1", array("username" => $username, "password" => $password) );
+		
+		$this->session->set( "user", array("username" => $username) );
+		
+		$this->forward( array("controller" => "User", "action" => "Profile") );
+	}
+}
+</pre>
+<h4>Redirect</h4>
+<pre>
+public function secretAction()
+{
+	// ..
+	
+	if ( !$user )
+	{
+		$this->redirect( "http://www.simonwebb.se/" );
+	}
+}
+</pre>
+<p>Redirect använder sig av PHP-funktionen header( "Location: $path" ).</p>
+<h4>404 Not found</h4>
+<p>Du kan ange en route som Dispatchern ska anropa om inga andra routes matchar den anvigna url:en. Detta gör du på följande sätt.</p>
+<pre>
+use Simox\Dispatcher;
+
+// ..
+
+$simox->set( "dispatcher", function() {
+    $dispatcher = new Dispatcher();
+    $dispatcher->setNoMatchPath( "IndexController#NotfoundAction" );
+    return $dispatcher;
+} );
+</pre>
+<p>Det går också att skapa en 404-sida genom plugins.</p>
+<h4>Filtrera output</h4>
+<p>Med vy-objetet kan du med metoden "setOutputCallable" ange en anonym funktion som kan hantera den output som vyn ger. Denna funktion tar emot en string innehållande all html-kod som senare ska renderas ut i webbläsaren. Exempel:</p>
+<pre>
+use Simox\View;
+
+// ..
+
+$simox->set( "view", function() {
+    $view = new View();
+    $view->setOutputCallable( function($output) {
+        return str_replace( "katt", "hund", $output );
+    } );
+    return $view;
+} );
+</pre>
+
+</div>
