@@ -14,7 +14,7 @@ class Dispatcher extends SimoxServiceBase implements Events\EventsAwareInterface
 	
 	private $was_forwarded;
     
-    private $noMatchPath;
+    private $no_match_path;
 
     public function __construct()
     {
@@ -31,6 +31,9 @@ class Dispatcher extends SimoxServiceBase implements Events\EventsAwareInterface
 		return $this->events_manager;
 	}
 	
+    /**
+     * @return Returns the name of the controller being dispatched
+     */
 	public function getControllerName()
 	{
         $this->controller_name = strtolower( $this->controller_name );
@@ -38,6 +41,9 @@ class Dispatcher extends SimoxServiceBase implements Events\EventsAwareInterface
         return $this->controller_name;
 	}
 	
+    /**
+     * @return Returns the name of the action being dispatched
+     */
 	public function getActionName()
 	{
         $this->action_name = strtolower( $this->action_name );
@@ -45,6 +51,13 @@ class Dispatcher extends SimoxServiceBase implements Events\EventsAwareInterface
         return $this->action_name;
 	}
 	
+    /**
+     * Tells the dispatcher to forward to another controller and action
+     * 
+     * @param string $params["controller"] name of the controller
+     * @param string $params["action"] name of the action
+     * @param array $params["params"] parameters to the action
+     */
 	public function forward( $params )
 	{
 		$controller = ucfirst( strtolower( $params["controller"] ) ) . "Controller";
@@ -52,15 +65,30 @@ class Dispatcher extends SimoxServiceBase implements Events\EventsAwareInterface
         
 		$this->controller = new $controller();
 		$this->action = $action;
+        $this->params = $params["params"];
 		
 		$this->was_forwarded = true;
 	}
     
-    public function setNoMatchPath( $path )
+    /**
+     * Sets the $no_match_path
+     *
+     * If the router tells the dispatcher that there is no match,
+     * the $no_match_path can tell the dispatcher what controller#action to call
+     * 
+     * @param array $target ["controller" => "index", "action" => "index"]
+     */
+    public function setNoMatchPath( $target )
     {
-        $this->noMatchPath = array( "target" => $path, "params" => array() );
+        $this->no_match_path = array( "target" => $target, "params" => array() );
     }
     
+    /**
+     * Private helper function to explode a target (Controller#action) into array
+     * 
+     * @param string $target
+     * @return array
+     */
     private function _explodeTarget( $target )
     {
         $target = explode( "#", $target );
@@ -71,28 +99,25 @@ class Dispatcher extends SimoxServiceBase implements Events\EventsAwareInterface
         );
     }
     
+    /**
+     * Dispatch the flow to a controller/action provided by the router
+     */
     public function dispatch( $match )
     {
         // If there was no match
         if ( $match == false )
         {
-            // 404 header ..
+            // 404 header
             header("HTTP/1.0 404 Not Found");
-            if ( isset($this->noMatchPath) )
+            
+            if ( isset($this->no_match_path) )
             {
-                $match = $this->noMatchPath;
+                $match = $this->no_match_path;
             }
             else
             {
                 throw new \Exception("404. Page not found.");
             }
-        }
-        
-        // If a callable is provided directly from the router
-        if ( is_callable( $match["target"] ) )
-        {
-            call_user_func_array( $match["target"], $match["params"] ); 
-            return;
         }
         
         // Controller#action

@@ -235,7 +235,12 @@ class Users extends Model
 <h4>Skapa en modell i kontrollen</h4>
 <p>I kontrollen skriver man på följande sätt för att instansera en modell.</p>
 <pre>
-$user = Users::find( "WHERE name=:name", array("name" => "simon") );
+$yellow_animals = Animals::find(
+    "WHERE color=:color ORDER BY size DESC",
+    array(
+        "bind" => array("color" => "yellow")
+    )
+);
 </pre>
 <p>Första parametern är sql. Andra parametern är "bind" som knyter värden till variablar som används i sql. Funktionen find() returnerar en array av objekt.</p>
 <h4>Modellen i vyn</h4>

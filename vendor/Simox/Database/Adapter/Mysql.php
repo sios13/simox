@@ -20,10 +20,9 @@ class Mysql extends Database
     
     public function initialize()
     {
-        $dsn = "mysql:dbname=" . $this->dbname . ";charset=utf8;host=" . $this->host;
-        
         if ( !isset( $this->dbh ) )
         {
+            $dsn = "mysql:dbname=" . $this->dbname . ";charset=utf8;host=" . $this->host;
             $this->dbh = new \PDO( $dsn, $this->user, $this->password );
         }
     }

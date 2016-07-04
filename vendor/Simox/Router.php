@@ -10,16 +10,27 @@ class Router extends SimoxServiceBase
         $this->routes = array();
     }
     
+    /**
+     * Adds a route.
+     * Routes are compared to the requested route.
+     * 
+     * @param string $path
+     * @param string $target the target controller#action
+     */
     public function addRoute($path, $target)
     {
         $this->routes[] = array(
-            //"method" => $method,
             "path" => $path,
             "target" => $target
         );
     }
     
-    // Returns a route path given a controller and action (target)
+    /**
+     * Returns a route path given a controller and action (target)
+     * 
+     * @param string $controller
+     * @param string $action
+     */
     public function reverseRoute( $controller, $action )
     {
         $controller_action_name = ucfirst(strtolower($controller)) . "Controller" . "#" . strtolower($action) . "Action";
@@ -35,9 +46,13 @@ class Router extends SimoxServiceBase
         return false;
     }
     
-    // Match the request url with routes
-    // If match, returns route information
-    // If no match, returns false
+    /**
+     * Match the requested url with the routes
+     * If match, returns route information
+     * If no match, returns false
+     * 
+     * @return
+     */
     public function match()
     {
         // Get requested url
@@ -65,6 +80,7 @@ class Router extends SimoxServiceBase
         {
             /*
             // Check if request method matches. If not, continue to next route
+            // Do I need this??
             if ($route["method"] !== $requestMethod)
             {
                 continue;
