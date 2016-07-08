@@ -110,7 +110,6 @@ abstract class Model extends SimoxServiceBase
     }
     
     /**
-     * NOTE: USE FETCH FIRST
      * Uses the find function but returns only the first model
      */
     public static function findFirst( $sub_sql = null, $params = null )
@@ -145,11 +144,19 @@ abstract class Model extends SimoxServiceBase
          */
         if ( $this->_exists_in_db )
         {
+            /**
+             * Retrieve a query from the query builder
+             */
             $query = $this->database->buildQuery( $this->_table_name, "update", array("columns" => $this->_columns) );
             
+            /**
+             * Create an array with the model attributes (binding parameters)
+             */
             $attributes = $this->getAttributes();
             
-            // Add "snap_" prefix
+            /**
+             * Add "snap_" prefix to the snapshot in order to not get index conflict when we merge attributes and snapshot
+             */
             $snapshot = array();
             
             foreach ( $this->_snapshot as $key => $value )
@@ -157,6 +164,10 @@ abstract class Model extends SimoxServiceBase
                 $snapshot["snap_" . $key] = $value;
             }
             
+            /**
+             * Merge our binding parameters.
+             * Bind the parameters to the query and return the result.
+             */
             return $query->execute( array_merge($attributes, $snapshot) );
         }
         else
