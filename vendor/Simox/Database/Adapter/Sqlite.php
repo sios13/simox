@@ -20,16 +20,4 @@ class Sqlite extends Database
             $this->db_connection = new \PDO( $dsn );
         }
     }
-    
-    public function describeColumns( $table_name )
-    {
-        $this->initialize();
-        
-        $query = $this->db_connection->prepare( "PRAGMA table_info('$table_name');" );
-        $query->execute();
-        
-        $resultset = $query->fetchAll();
-        
-        return $resultset;
-    }
 }

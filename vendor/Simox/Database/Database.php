@@ -12,11 +12,6 @@ abstract class Database
      */
 	public function initialize() {}
     
-    /**
-     * Returns an description of the columns for the given table_name
-     */
-    public abstract function describeColumns( $table_name );
-    
     public function prepare( $sql )
     {
         $this->initialize();

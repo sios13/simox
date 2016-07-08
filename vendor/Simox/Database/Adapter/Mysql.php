@@ -26,25 +26,4 @@ class Mysql extends Database
             $this->db_connection = new \PDO( $dsn, $this->username, $this->password );
         }
     }
-    
-    public function describeColumns( $table_name )
-    {
-        $this->initialize();
-        
-        $query = $this->db_connection->prepare( "describe $table_name;" );
-        $query->execute();
-        
-        $resultset = $query->fetchAll();
-        
-        $columns = array();
-        
-        foreach ( $resultset as $row )
-        {
-            $columns[] = array(
-                "name" => $row["Field"]
-            );
-        }
-        
-        return $columns;
-    }
 }

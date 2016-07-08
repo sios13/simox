@@ -9,14 +9,14 @@ abstract class Model extends SimoxServiceBase
     private $_table_name;
     
     /**
-     * Array with the original attributes of the model
-     */
-    private $_snapshot;
-    
-    /**
      * Array with an description of the table columns
      */
     private $_columns;
+    
+    /**
+     * Array with the original attributes of the model
+     */
+    private $_snapshot;
     
     /**
      * Is true if model exists in db table
@@ -28,14 +28,9 @@ abstract class Model extends SimoxServiceBase
     {
         $this->_table_name = get_called_class();
         
-        $this->_columns = $this->database->describeColumns( $this->_table_name );
+        $this->_columns = $this->getColumns();
         
         $this->_snapshot = array();
-        
-        foreach ( $this->_columns as $column )
-        {
-            $this->_snapshot[$column["name"]] = $this->$column["name"];
-        }
         
         $this->_exists_in_db = false;
     }
@@ -46,77 +41,25 @@ abstract class Model extends SimoxServiceBase
     }
     
     /**
-     * <code>
-     * <?php
-     * $yellow_animals = Animals::find(
-     *     "WHERE color=:color ORDER BY size DESC",
-     *     "bind" => array("color" = "yellow")
-     * );
-     * ?>
-     * </code>
-     * 
-     * @param string $sub_sql additional sql
-     * @param array $params
-     * @return 
+     * Helper function, returns an array describing the model columns
      */
-    public static function find( $sub_sql = null, $params = null )
+    private function getColumns()
     {
-        /**
-         * Load parameters form $params
-         */
-        $bind = isset($params["bind"]) ? $params["bind"] : null;
-        $cache = isset($params["cache"]) ? $params["cache"] : null;
-        
-        $table_name = get_called_class();
+        $columns = array();
         
         /**
-         * Build the query, bind and fetch the resultset
+         * Use call_user_func to make sure only public vars are returned
          */
-        $query = Simox::getService("database")->buildQuery( $table_name, "find", array("sub_sql" => $sub_sql) );
+        $vars = call_user_func('get_object_vars', $this);
         
-        $query->execute( $bind );
+        foreach ( $vars as $key => $value )
+        {
+            $columns[] = array(
+                "name" => $key
+            );
+        }
         
-        $resultset = $query->fetchAll();
-        
-		if ( $resultset == false )
-		{
-			return false;
-		}
-        
-        /**
-         * Initialize the models
-         */
-        $models = array();
-        
-		foreach ( $resultset as $row )
-		{
-            $model = new $table_name();
-            
-            $model->setExists( true );
-			
-            foreach ( $row as $key => $value )
-            {
-                if ( !is_int($key) )
-                {
-                    $model->$key = $value;
-                    $model->_snapshot[$key] = $value;
-                }
-            }
-			
-			$models[] = $model;
-		}
-		
-		return $models;
-    }
-    
-    /**
-     * Uses the find function but returns only the first model
-     */
-    public static function findFirst( $sub_sql = null, $params = null )
-    {
-        $models = self::find( $sub_sql, $params );
-        
-        return $models[0];
+        return $columns;
     }
     
     /**
@@ -135,12 +78,111 @@ abstract class Model extends SimoxServiceBase
     }
     
     /**
-     * Inserts or updates the model
+     * Helper function to create and initialize a model
+     */
+    private static function createModel( $row )
+    {
+        $table_name = get_called_class();
+        
+        $model = new $table_name();
+        
+        $model->setExists( true );
+        
+        foreach ( $row as $key => $value )
+        {
+            if ( !is_int($key) )
+            {
+                $model->$key = $value;
+                $model->_snapshot[$key] = $value;
+            }
+        }
+        
+        return $model;
+    }
+    
+    /**
+     * <code>
+     * <?php
+     * $yellow_animals = Animals::find(
+     *     "WHERE color=:color ORDER BY size DESC",
+     *     "bind" => array("color" = "yellow")
+     * );
+     * ?>
+     * </code>
+     * 
+     * @param string $sub_sql additional sql
+     * @param array $params
+     * @return
+     */
+    public static function find( $sub_sql = null, $params = null )
+    {
+        /**
+         * Load parameters form $params
+         */
+        $bind = isset($params["bind"]) ? $params["bind"] : null;
+        $cache = isset($params["cache"]) ? $params["cache"] : null;
+        $find_first = isset($params["find_first"]) ? $params["find_first"] : null;
+        
+        $table_name = get_called_class();
+        
+        /**
+         * Build the query, bind and fetch the resultset
+         */
+        $query = Simox::getService("database")->buildQuery( $table_name, "find", array("sub_sql" => $sub_sql) );
+        
+        $query->execute( $bind );
+        
+        if ( $find_first )
+        {
+            $row = $query->fetch( \PDO::FETCH_ASSOC );
+            
+            if ( $row == false )
+            {
+                return false;
+            }
+            
+            $model = self::createModel( $row );
+            
+            return $model;
+        }
+        
+        $resultset = $query->fetchAll( \PDO::FETCH_ASSOC );
+        
+        if ( $resultset == false )
+        {
+            return false;
+        }
+        
+        $models = array();
+        
+        foreach ( $resultset as $row )
+        {
+            $model = self::createModel( $row );
+            
+            $models[] = $model;
+        }
+        
+        return $models;
+    }
+    
+    /**
+     * Returns only the first model
+     */
+    public static function findFirst( $sub_sql = null, $params = null )
+    {
+        $params["find_first"] = true;
+        
+        return self::find( $sub_sql, $params );
+    }
+    
+    /**
+     * Inserts or updates the database table
      */
     public function save()
     {
         /**
          * Decide if we should update or insert
+         * (if we know the record exists in the database...)
          */
         if ( $this->_exists_in_db )
         {
