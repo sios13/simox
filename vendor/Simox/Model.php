@@ -3,20 +3,46 @@ namespace Simox;
 
 abstract class Model extends SimoxServiceBase
 {
-    private $table_name;
+    /**
+     * Name of the table attached to this model
+     */
+    private $_table_name;
     
-    private $attributes;
+    /**
+     * Array with the original attributes of the model
+     */
+    private $_snapshot;
     
-    // The snapshot is an array storing all the attributes with their 'original' value
-    private $snapshot;
+    /**
+     * Array with an description of the table columns
+     */
+    private $_columns;
+    
+    /**
+     * Is true if model exists in db table
+     * Is set to true when a model is created by the find function
+     */
+    private $_exists_in_db;
 
     public function __construct()
     {
-        $this->table_name = get_called_class();
+        $this->_table_name = get_called_class();
         
-        $this->attributes = array();
+        $this->_columns = $this->database->describeColumns( $this->_table_name );
         
-        $this->snapshot = array();
+        $this->_snapshot = array();
+        
+        foreach ( $this->_columns as $column )
+        {
+            $this->_snapshot[$column["name"]] = $this->$column["name"];
+        }
+        
+        $this->_exists_in_db = false;
+    }
+    
+    public function setExists( $value )
+    {
+        $this->_exists_in_db = $value;
     }
     
     /**
@@ -41,10 +67,12 @@ abstract class Model extends SimoxServiceBase
         $bind = isset($params["bind"]) ? $params["bind"] : null;
         $cache = isset($params["cache"]) ? $params["cache"] : null;
         
+        $table_name = get_called_class();
+        
         /**
          * Build the query, bind and fetch the resultset
          */
-        $query = self::_buildQuery( "find", array("sub_sql" => $sub_sql) );
+        $query = Simox::getService("database")->buildQuery( $table_name, "find", array("sub_sql" => $sub_sql) );
         
         $query->execute( $bind );
         
@@ -63,13 +91,15 @@ abstract class Model extends SimoxServiceBase
 		foreach ( $resultset as $row )
 		{
             $model = new $table_name();
+            
+            $model->setExists( true );
 			
             foreach ( $row as $key => $value )
             {
                 if ( !is_int($key) )
                 {
                     $model->$key = $value;
-                    $model->snapshot[$key] = $value;
+                    $model->_snapshot[$key] = $value;
                 }
             }
 			
@@ -80,6 +110,7 @@ abstract class Model extends SimoxServiceBase
     }
     
     /**
+     * NOTE: USE FETCH FIRST
      * Uses the find function but returns only the first model
      */
     public static function findFirst( $sub_sql = null, $params = null )
@@ -90,107 +121,18 @@ abstract class Model extends SimoxServiceBase
     }
     
     /**
-     * Helper function to check if a record exists
+     * Helper function, returns the model attributes as an array
      */
-    private function _exists( $attributes )
+    private function getAttributes()
     {
-        $sql = "SELECT * FROM $this->table_name WHERE (";
+        $attributes = array();
         
-        foreach ( $attributes as $key => $value )
+        foreach ( $this->_columns as $column )
         {
-            $sql .= $key . "=:" . $key . " AND ";
-            //$sql .= $key . "=" . $value . " AND ";
+            $attributes[$column["name"]] = $this->$column["name"];
         }
         
-        $sql = rtrim( $sql, "AND " );
-        $sql .= ") LIMIT 1;";
-        
-        $rows = $this->database->fetchAll( $sql, $this->snapshot );
-        
-        if ( count($rows) == 1 )
-        {
-            return true;
-        }
-        
-        return false;
-    }
-    
-    /**
-     * Initialize model attributes
-     * Checking the table, make sure they exist and make sure they are set in the model
-     * 
-     * @return array
-     */
-    private function _initializeAttributes()
-    {
-        // Retrieve the columns from the table
-        $db_table_columns = $this->database->describeColumns( $this->table_name );
-        
-        // Make sure attributes are set and store attributes in the attributes array
-        foreach ( $db_table_columns as $column )
-        {
-            if ( !isset($this->$column["name"]) )
-            {
-                throw new \Exception( "Attribute " . $column["name"] . " is not set." );
-                return false;
-            }
-            
-            $this->attributes[$column["name"]] = $this->$column["name"];
-        }
-    }
-    
-    /**
-     * Builds a query, returns a query object
-     */
-    private static function _buildQuery( $type, $params = null )
-    {
-		$table_name = get_called_class();
-        
-        // The sql array will hold sql fragments that will later be imploded
-        $sql = array();
-        
-        if ( $type == "find" )
-        {
-            $sub_sql = isset($params["sub_sql"]) ? $params["sub_sql"] : null;
-        
-            $sql[] = "SELECT * from $table_name";
-            
-            if ( isset($sub_sql) )
-            {
-                $sql[] .= " " . $sub_sql;
-            }
-            
-            $sql[] = ";";
-        }
-        else if ( $type == "update" )
-        {
-            $attributes = isset($params["attributes"]) ? $params["attributes"] : null;
-            $snapshot = isset($params["snapshot"]) ? $params["snapshot"] : null;
-            
-            $sql[] = "UPDATE $table_name SET ";
-            
-            foreach ( $this->attributes as $key => $value )
-            {
-                $sql[] = $key . "=:" . $key . ", ";
-                //$sql[] = $key . "=" . $value . ", ";
-            }
-            
-            $sql[count($sql)-1] = rtrim( $sql[count($sql)-1], ", " );
-            $sql[] .= " WHERE ";
-            
-            foreach ( $this->snapshot as $key => $value )
-            {
-                $sql[] = $key . "=:snap_" . $key . " AND ";
-                //$sql[] = $key . "=" . $value . " AND ";
-            }
-            
-            $sql[count($sql)-1] = rtrim( $sql[count($sql)-1], " AND " );
-            $sql[] = ";";
-        }
-            
-        $sql = implode( $sql );
-            
-        return Simox::getService( "database" )->prepare( $sql );
+        return $attributes;
     }
     
     /**
@@ -198,26 +140,41 @@ abstract class Model extends SimoxServiceBase
      */
     public function save()
     {
-        // Initialize the model attributes
-        $this->_initializeAttributes();
-        
-        // Decide if we should update or insert
-        if ( $this->_exists( $attributes ) )
+        /**
+         * Decide if we should update or insert
+         */
+        if ( $this->_exists_in_db )
         {
-            $query = slef::$_buildQuery( "update", array("attributes" => $this->attributes, "snapshot" => $this->snapshot) );
+            $query = $this->database->buildQuery( $this->_table_name, "update", array("columns" => $this->_columns) );
+            
+            $attributes = $this->getAttributes();
             
             // Add "snap_" prefix
-            $_snapshot = array();
-            foreach ( $this->snapshot as $key => $value )
+            $snapshot = array();
+            
+            foreach ( $this->_snapshot as $key => $value )
             {
-                $_snapshot["snap_" . $key] = $value;
+                $snapshot["snap_" . $key] = $value;
             }
             
-            $query->execute( array_merge($attributes, $_snapshot) );
+            return $query->execute( array_merge($attributes, $snapshot) );
         }
         else
         {
-            echo "NEJ";
+            /**
+             * Retrieve a query from the query builder
+             */
+            $query = $this->database->buildQuery( $this->_table_name, "insert", array("columns" => $this->_columns) );
+            
+            /**
+             * Create an array with the model attributes (binding parameters)
+             */
+            $attributes = $this->getAttributes();
+            
+            /**
+             * Bind the parameters and return the result
+             */
+            return $query->execute( $attributes );
         }
     }
 }

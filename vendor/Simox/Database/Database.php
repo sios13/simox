@@ -17,25 +17,72 @@ abstract class Database
         
         return $this->db_connection->prepare( $sql );
     }
-    /*
-    public function fetchAll( $sql, $bind )
-    {
-        $this->initialize();
-        
-        $query = $this->dbh->prepare( $sql );
-        $query->execute( $bind );
-        $rows = $query->fetchAll();
-        return $rows;
-    }
     
-    public function insertInto( $sql, $bind )
+    /**
+     * Builds a query, returns a query object
+     */
+    public function buildQuery( $table_name, $type, $params = null )
     {
-        $this->initialize();
+        if ( $type == "find" )
+        {
+            $sub_sql = isset($params["sub_sql"]) ? $params["sub_sql"] : null;
         
-        $query = $this->db_connection->prepare( $sql );
+            $sql = "SELECT * FROM $table_name";
+            
+            if ( isset($sub_sql) )
+            {
+                $sql .= " " . $sub_sql;
+            }
+            
+            $sql .= ";";
+        }
+        else if ( $type == "update" )
+        {
+            $columns = isset($params["columns"]) ? $params["columns"] : null;
+            
+            $sql = "UPDATE $table_name SET ";
+            
+            foreach ( $columns as $column )
+            {
+                $sql .= $column["name"] . "=:" . $column["name"] . ",";
+            }
+            
+            $sql = rtrim( $sql, ", " );
+            $sql .= " WHERE ";
+            
+            foreach ( $columns as $column )
+            {
+                $sql .= $column["name"] . "=:snap_" . $column["name"] . " AND ";
+            }
+            
+            $sql = rtrim( $sql, " AND " );
+            $sql .= ";";
+        }
+        else if ( $type == "insert" )
+        {
+            $columns = isset($params["columns"]) ? $params["columns"] : null;
+            
+            $sql = "INSERT INTO $table_name (";
+            
+            foreach ( $columns as $column )
+            {
+                $sql .= $column["name"] . ", ";;
+            }
+            
+            $sql = rtrim( $sql, ", " );
+            
+            $sql .= ") VALUES (";
+            
+            foreach ( $columns as $column )
+            {
+                $sql .= ":" . $column["name"] . ", ";
+            }
+            
+            $sql = rtrim( $sql, ", " );
+            $sql .= ");";
+        }
         
-        //Returns true on success or false on failure
-        return $query->execute( $bind );
+        echo $sql . "<br>";
+        return $this->prepare( $sql );
     }
-    */
 }

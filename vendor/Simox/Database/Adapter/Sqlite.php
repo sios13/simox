@@ -27,7 +27,9 @@ class Sqlite extends Database
         
         $query = $this->db_connection->prepare( "PRAGMA table_info('$table_name');" );
         $query->execute();
+        
         $resultset = $query->fetchAll();
+        
         return $resultset;
     }
 }

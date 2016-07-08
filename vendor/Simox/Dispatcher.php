@@ -58,14 +58,15 @@ class Dispatcher extends SimoxServiceBase implements Events\EventsAwareInterface
      * @param string $params["action"] name of the action
      * @param array $params["params"] parameters to the action
      */
-	public function forward( $params )
+	public function forward( $_params )
 	{
-		$controller = ucfirst( strtolower( $params["controller"] ) ) . "Controller";
-		$action = strtolower( $params["action"] ) . "Action";
+		$controller = ucfirst( strtolower( $_params["controller"] ) ) . "Controller";
+		$action = strtolower( $_params["action"] ) . "Action";
+        $params = isset($_params["params"]) ? $_params["params"] : array();
         
 		$this->controller = new $controller();
 		$this->action = $action;
-        $this->params = $params["params"];
+        $this->params = $params;
 		
 		$this->was_forwarded = true;
 	}
