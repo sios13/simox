@@ -5,27 +5,44 @@ class Session extends SimoxServiceBase
 {
 	public function __construct() {}
     
+    /**
+     * Starts the session
+     */
     public function start()
     {
 		session_start();
     }
     
+    /**
+     * Destroys the session
+     */
     public function destroy()
     {
         $_SESSION = Array();
 		session_destroy();
     }
 	
-	public function set( $name, $value )
+    /**
+     * Sets the session
+     *
+     * @param string $key
+     * @param string $value
+     */
+	public function set( $key, $value )
 	{
-		$_SESSION[$name] = $value;
+		$_SESSION[$key] = $value;
 	}
 	
-	public function get( $name )
+    /**
+     * Returns the session
+     *
+     * @param string $key
+     */
+	public function get( $key )
 	{
-		if ( isset($_SESSION[$name]) )
+		if ( isset($_SESSION[$key]) )
 		{
-			return $_SESSION[$name];
+			return $_SESSION[$key];
 		}
 		else
 		{
