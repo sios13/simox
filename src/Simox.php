@@ -16,7 +16,8 @@ class Simox
             "session"    => function() {return new Session();},
             "request"    => function() {return new Request();},
             "flash"      => function() {return new Flash();},
-            "cache"      => function() {return new Cache();}
+            "cache"      => function() {return new Cache();},
+            "response"   => function() {return new Response();}
         );
     }
     
