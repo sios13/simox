@@ -3,6 +3,8 @@ namespace Simox;
 
 class View extends SimoxServiceBase
 {
+    private $_content;
+    
     private $views_dir;
     
     private $view_levels;
@@ -70,8 +72,8 @@ class View extends SimoxServiceBase
     }
     
     /**
-    * Attach a file name to a view level, enables the view level
-    */
+     * Attach a file name to a view level, enables the view level
+     */
     public function setViewLevel( $view_level_name, $view_level_file_name )
     {
         if ( isset($this->view_levels[$view_level_name]) )
@@ -82,24 +84,24 @@ class View extends SimoxServiceBase
     }
     
     /**
-    * Sets the action view
-    */
+     * Sets the action view
+     */
     public function pick( $view_level_file_name )
     {
         $this->setViewLevel( "ACTION_VIEW", $view_level_file_name );
     }
     
     /**
-    * Sets the main view
-    */
+     * Sets the main view
+     */
     public function setMainView( $view_level_file_name )
     {
         $this->setViewLevel( "MAIN_VIEW", $view_level_file_name );
     }
     
     /**
-    * Disables a view level
-    */
+     * Disables a view level
+     */
     public function disableViewLevel( $view_level_name )
     {
         if ( isset($this->view_levels[$view_level_name]) )
@@ -109,16 +111,21 @@ class View extends SimoxServiceBase
     }
     
     /**
-    * Set a callable to filter output
-    */
+     * Set a callable to filter output
+     */
     public function setOutputCallable( $callable )
     {
         $this->output_callable = $callable;
     }
     
+    public function getContent()
+    {
+        return $this->_content;
+    }
+    
     /**
-    * Enables caching.
-    */
+     * Enables caching.
+     */
     public function enableCache ( $options = null )
     {
         $key = isset($options["key"]) ? $options["key"] : "";
@@ -138,7 +145,7 @@ class View extends SimoxServiceBase
         ob_start();
         
         // Output enabled view levels
-        $this->getContent();
+        $this->output();
         
         $content = ob_get_contents();
         
@@ -149,16 +156,16 @@ class View extends SimoxServiceBase
             $content = call_user_func( $this->output_callable, $content );
         }
         
-        return $content;
+       $this->_content = $content;
     }
     
     /**
-    * Includes the files attached to the view levels.
-    * Disabled view levels do not get included.
-    * MAIN_VIEW -> BEFORE_CONTROLLER_VIEW -> CONTROLLER_VIEW -> AFTER_CONTROLLER_VIEW -> ACTION_VIEW
-    * If a view level has cache enabled, stop rendering
-    */
-    public function getContent()
+     * Includes the files attached to the view levels.
+     * Disabled view levels do not get included.
+     * MAIN_VIEW -> BEFORE_CONTROLLER_VIEW -> CONTROLLER_VIEW -> AFTER_CONTROLLER_VIEW -> ACTION_VIEW
+     * If a view level has cache enabled, stop rendering
+     */
+    public function output()
     {
         foreach ( $this->view_levels as $view_level )
         {
@@ -183,9 +190,10 @@ class View extends SimoxServiceBase
     public function getCacheContent( $view_level )
     {
         /**
-        * If the cache does not exist, create the cache
-        */
+         * If the cache does not exist, create the cache
+         */
         $cache = $this->cache_service_name;
+        
         if ( !$this->$cache->exists( $view_level["cache_enabled"]["key"], $view_level["cache_enabled"]["lifetime"] ) )
         {
             $this->$cache->start( $view_level["cache_enabled"]["key"] );
@@ -198,8 +206,8 @@ class View extends SimoxServiceBase
     }
     
     /**
-    * Returns a view level name (string) given a level (integer)
-    */
+     * Returns a view level name (string) given a level (integer)
+     */
     private function _getViewLevelNameFromLevel( $view_level_level )
     {
         foreach ( $this->view_levels as $view_level )
@@ -212,8 +220,8 @@ class View extends SimoxServiceBase
     }
     
     /**
-    * Returns a level (integer) given a view level name (string)
-    */
+     * Returns a level (integer) given a view level name (string)
+     */
     private function _getViewLevelFromViewLevelName( $view_level_name )
     {
         foreach ( $this->view_levels as $view_level )
