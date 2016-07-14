@@ -66,22 +66,21 @@ class Simox
      */
     public function handle()
     {
-        $match = $this->router->match();
+        $this->router->handle();
         
-        $this->dispatcher->dispatch( $match );
-    }
-    
-    /**
-     * Tells the view to start rendering.
-     * 
-     * @return string returns the full website content
-     */
-    public function getContent()
-    {
-        $this->handle();
-    
-        $content = $this->view->render();
+        $this->dispatcher->setControllerName( $this->router->getControllerName() );
+        $this->dispatcher->setActionName( $this->router->getActionName() );
+        $this->dispatcher->setParams( $this->router->getParams() );
         
-        return $content;
+        $this->dispatcher->dispatch();
+        
+        $this->view->render();
+        
+        $this->response->setContent( $this->view->getContent() );
+        
+        $this->response->sendHeaders();
+        //$this->response->sendCookies();
+        
+        return $this->response;
     }
 }
