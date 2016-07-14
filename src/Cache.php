@@ -14,17 +14,17 @@ class Cache extends SimoxServiceBase
     }
     
     /**
-    * Deletes the cache file with the given key
-    */
+     * Deletes the cache file with the given key
+     */
     public function delete( $key )
     {
         unlink( $this->cache_dir . $key . ".html" );
     }
     
     /**
-    * Returns true of cache with given key exists, otherwise false
-    * If the cache has lived for longer than its life time, destroy the cache
-    */
+     * Returns true if cache with given key exists, otherwise false
+     * If the cache has lived for longer than its life time, destroy the cache
+     */
     public function exists( $key, $lifetime )
     {
         if ( !file_exists($this->cache_dir . $key . ".html") )
