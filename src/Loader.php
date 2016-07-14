@@ -10,6 +10,35 @@ class Loader
         $this->registered_directories = array();
     }
     
+    public function _getVendorPath( $dir )
+    {
+        return realpath( getcwd() . DIRECTORY_SEPARATOR . $dir ) . DIRECTORY_SEPARATOR;
+    }
+    
+    /**
+     * Removes the namespace from a class
+     */
+    public function _getClassName( $namespace )
+    {
+        $exploded_namespace = explode( "\\", $namespace );
+        
+        return $exploded_namespace[count($exploded_namespace)-1];
+    }
+    
+    public function _getNamespaceBase( $namespace )
+    {
+        $exploded_namespace = explode( "\\", $namespace );
+        
+        $namespace_base = "";
+        
+        for ( $i = 0; $i < count($exploded_namespace)-1; $i++ )
+        {
+            $namespace_base .= DIRECTORY_SEPARATOR . $exploded_namespace[$i];
+        }
+        
+        return $namespace_base;
+    }
+    
     /**
     * The autoloader will look in the registered directories
     */
@@ -27,9 +56,14 @@ class Loader
         spl_autoload_register( function($name) {
             foreach( $this->registered_directories as $dir )
             {
-                if ( file_exists( realpath( getcwd() . DIRECTORY_SEPARATOR . $dir ) . DIRECTORY_SEPARATOR . str_replace( "\\", "/", $name ) . ".php" ) )
+                if ( file_exists( $this->_getVendorPath($dir) . $this->_getNamespaceBase($name) . DIRECTORY_SEPARATOR . $this->_getClassName($name) . ".php" ) )
                 {
-                    include( realpath( realpath( getcwd() . DIRECTORY_SEPARATOR . $dir ) . DIRECTORY_SEPARATOR . str_replace( "\\", "/", $name ) . ".php" ) );
+                    include( realpath( $this->_getVendorPath($dir) . $this->_getNamespaceBase($name) . DIRECTORY_SEPARATOR . $this->_getClassName($name) . ".php" ) );
+                    break;
+                }
+                else if ( file_exists( $this->_getVendorPath($dir) . $this->_getNamespaceBase($name) . DIRECTORY_SEPARATOR . $this->_getClassName($name) . DIRECTORY_SEPARATOR . $this->_getClassName($name) . ".php" ) )
+                {
+                    include( $this->_getVendorPath($dir) . $this->_getNamespaceBase($name) . DIRECTORY_SEPARATOR . $this->_getClassName($name) . DIRECTORY_SEPARATOR . $this->_getClassName($name) . ".php" );
                     break;
                 }
             }
