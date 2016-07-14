@@ -49,18 +49,18 @@ class Tag extends SimoxServiceBase
     /* ===== LINKS ===== */
     
     /**
-     * Creates a HTML A tag using the Url Simox service
+     * Creates an HTML A tag using the Url Simox service
      *
      * <code>
      * <p>Hello, my name is Simon. Click <?php $this->tag->linkTo( "/blog/", "here" ); ?> to read my blog!</p>
      * <p>Check out my <?php $this->tag->linkTo( "http://www.example.com/", "awesome website", false ); ?>!</p>
      * </code>
      * 
-     * @param string $target
+     * @param string $path
      * @param string $text
      * @param boolean $local_path
      */
-    public function linkTo( $target, $text, $local_path = true )
+    public function linkTo( $path, $text, $local_path = true )
     {
         $basePath = "";
         
@@ -69,7 +69,7 @@ class Tag extends SimoxServiceBase
             $basePath = $this->url->getBaseUri();
         }
 		
-        $link = "<a href='$basePath$target' >$text</a>";
+        $link = "<a href='$basePath$path'>$text</a>";
 		
         return $link;
     }
@@ -79,7 +79,7 @@ class Tag extends SimoxServiceBase
      * @param string $path path to the image relative to the /public/ folder
      * @param string $alt alternative text to the img-tag
      * @param array $options
-     * @return string returns a HTML img tag
+     * @return string returns an HTML img tag
      */
 	public function image( $path, $alt, $options = array() )
 	{
