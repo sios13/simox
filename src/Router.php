@@ -5,9 +5,28 @@ class Router extends SimoxServiceBase
 {
     private $routes;
     
+    private $_controller_name;
+    private $_action_name;
+    private $_params;
+    
     public function __construct()
     {
-        $this->routes = array();
+        $this->_routes = array();
+    }
+    
+    public function getControllerName()
+    {
+        return $this->_controller_name;
+    }
+    
+    public function getActionName()
+    {
+        return $this->_action_name;
+    }
+    
+    public function getParams()
+    {
+        return $this->_params;
     }
     
     /**
@@ -19,31 +38,23 @@ class Router extends SimoxServiceBase
      */
     public function addRoute($path, $target)
     {
-        $this->routes[] = array(
-            "path" => $path,
-            "target" => $target
-        );
-    }
-    
-    /**
-     * Returns a route path given a controller and action (target)
-     * 
-     * @param string $controller
-     * @param string $action
-     */
-    public function reverseRoute( $controller, $action )
-    {
-        $controller_action_name = ucfirst(strtolower($controller)) . "Controller" . "#" . strtolower($action) . "Action";
-        
-        foreach ( $this->routes as $route )
+        if ( !is_array($target) )
         {
-            if ( $controller_action_name == $route["target"] )
-            {
-                return $route["path"];
-            }
+            $target = explode( "#", $target );
+            $controller_name = str_replace( "Controller", "", $target[0] );
+            $action_name = str_replace( "Action", "", $target[1] );
+        }
+        else
+        {
+            $controller_name = $target["controller"];
+            $action_name = $target["action"];
         }
         
-        return false;
+        $this->_routes[] = array(
+            "path" => $path,
+            "controller_name" => strtolower($controller_name),
+            "action_name" => strtolower($action_name)
+        );
     }
     
     /**
@@ -53,7 +64,7 @@ class Router extends SimoxServiceBase
      * 
      * @return
      */
-    public function match()
+    public function handle()
     {
         // Get requested url
         $requestUrl = isset($_SERVER["REQUEST_URI"]) ? $_SERVER["REQUEST_URI"] : "/";
@@ -76,11 +87,10 @@ class Router extends SimoxServiceBase
         // Get request method
         $requestMethod = isset($_SERVER["REQUEST_METHOD"]) ? $_SERVER["REQUEST_METHOD"] : "GET";
 
-        foreach ($this->routes as $route)
+        foreach ($this->_routes as $route)
         {
             /*
             // Check if request method matches. If not, continue to next route
-            // Do I need this??
             if ($route["method"] !== $requestMethod)
             {
                 continue;
@@ -124,12 +134,9 @@ class Router extends SimoxServiceBase
                 }
             }
             
-            return array(
-                "target" => $route["target"],
-                "params" => $params
-            );
+            $this->_controller_name = $route["controller_name"];
+            $this->_action_name = $route["action_name"];
+            $this->_params = $params;
         }
-        
-        return false;
     }
 }
