@@ -83,7 +83,6 @@ abstract class Database
             $sql .= ");";
         }
         
-        echo $sql . "<br>";
         return $this->prepare( $sql );
     }
 }
