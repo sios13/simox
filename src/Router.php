@@ -73,13 +73,23 @@ class Router extends SimoxServiceBase
         
         /**
          * Remove base uri from request url
+         * If base uri is '/', the base uri has not been modified, so do not do str_replace
+         * Also, if base uri is '/', doing str_replace causes bugs
          */
-        $request_url = str_replace( $this->url->getBaseUri(), "", $request_url );
+        if ( $this->url->getBaseUri() != "/" )
+        {
+            $request_url = str_replace( $this->url->getBaseUri(), "", $request_url );
+        }
+        
+        if ( $request_url == "" )
+        {
+            $request_url = "/";
+        }
         
         /**
          * If there is no prepending slash, add it
          */
-        if ( $request_url != "" && $request_url[0] !== "/" )
+        if ( $request_url[0] !== "/" )
         {
             $request_url = "/" . $request_url;
         }
