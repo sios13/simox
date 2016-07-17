@@ -17,15 +17,27 @@ class Request extends SimoxServiceBase
 		}
 	}
 	
-	public function getPost( $var )
+	public function getPost( $name )
 	{
-		if ( isset($_POST[$var]) )
+		if ( isset($_POST[$name]) )
 		{
-			return $_POST[$var];
+			return $_POST[$name];
 		}
 		else
 		{
 			return false;
 		}
 	}
+    
+    public function getServer( $name )
+    {
+		if ( isset($_SERVER[$name]) )
+		{
+			return $_SERVER[$name];
+		}
+		else
+		{
+			return false;
+		}
+    }
 }
