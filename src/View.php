@@ -13,9 +13,13 @@ class View extends SimoxServiceBase
     
     private $cache_service_name;
     
+    private $_render_completed;
+    
     public function __construct()
 	{
         $this->views_dir = $this->url->getBasePath() . "/app/views/";
+        
+        $this->_render_completed = false;
         
         $this->view_levels = array(
             "MAIN_VIEW" => array(
@@ -118,11 +122,6 @@ class View extends SimoxServiceBase
         $this->output_callable = $callable;
     }
     
-    public function getContent()
-    {
-        return $this->_content;
-    }
-    
     /**
      * Enables caching.
      */
@@ -145,7 +144,7 @@ class View extends SimoxServiceBase
         ob_start();
         
         // Output enabled view levels
-        $this->output();
+        $this->getContent();
         
         $content = ob_get_contents();
         
@@ -157,6 +156,8 @@ class View extends SimoxServiceBase
         }
         
        $this->_content = $content;
+       
+       $this->_render_completed = true;
     }
     
     /**
@@ -165,8 +166,13 @@ class View extends SimoxServiceBase
      * MAIN_VIEW -> BEFORE_CONTROLLER_VIEW -> CONTROLLER_VIEW -> AFTER_CONTROLLER_VIEW -> ACTION_VIEW
      * If a view level has cache enabled, stop rendering
      */
-    public function output()
+    public function getContent()
     {
+        if ( $this->_render_completed )
+        {
+            return $this->_content;
+        }
+        
         foreach ( $this->view_levels as $view_level )
         {
             if ( $view_level["is_disabled"] )
