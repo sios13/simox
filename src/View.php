@@ -5,23 +5,23 @@ class View extends SimoxServiceBase
 {
     private $_content;
     
-    private $views_dir;
+    private $_views_dir;
     
-    private $view_levels;
+    private $_view_levels;
     
-    private $output_callable;
+    private $_output_callable;
     
-    private $cache_service_name;
+    private $_cache_service_name;
     
     private $_render_completed;
     
     public function __construct()
 	{
-        $this->views_dir = $this->url->getBasePath() . "/app/views/";
+        $this->_views_dir = $this->url->getBaseUri() . "/app/views/";
         
         $this->_render_completed = false;
         
-        $this->view_levels = array(
+        $this->_view_levels = array(
             "MAIN_VIEW" => array(
                 "name" => "MAIN_VIEW",
                 "level" => 5,
@@ -72,7 +72,7 @@ class View extends SimoxServiceBase
     
     public function setViewsDir( $views_dir )
     {
-        $this->views_dir = $views_dir;
+        $this->_views_dir = $views_dir;
     }
     
     /**
@@ -80,10 +80,10 @@ class View extends SimoxServiceBase
      */
     public function setViewLevel( $view_level_name, $view_level_file_name )
     {
-        if ( isset($this->view_levels[$view_level_name]) )
+        if ( isset($this->_view_levels[$view_level_name]) )
         {
-            $this->view_levels[$view_level_name]["file_name"] = $view_level_file_name;
-            $this->view_levels[$view_level_name]["is_disabled"] = false;
+            $this->_view_levels[$view_level_name]["file_name"] = $view_level_file_name;
+            $this->_view_levels[$view_level_name]["is_disabled"] = false;
         }
     }
     
@@ -108,9 +108,9 @@ class View extends SimoxServiceBase
      */
     public function disableViewLevel( $view_level_name )
     {
-        if ( isset($this->view_levels[$view_level_name]) )
+        if ( isset($this->_view_levels[$view_level_name]) )
         {
-            $this->view_levels[$level_name]["is_disabled"] = true;
+            $this->_view_levels[$level_name]["is_disabled"] = true;
         }
     }
     
@@ -119,7 +119,7 @@ class View extends SimoxServiceBase
      */
     public function setOutputCallable( $callable )
     {
-        $this->output_callable = $callable;
+        $this->_output_callable = $callable;
     }
     
     /**
@@ -130,10 +130,11 @@ class View extends SimoxServiceBase
         $key = isset($options["key"]) ? $options["key"] : "";
         $lifetime = isset($options["lifetime"]) ? $options["lifetime"] : 3600;
         $level = isset($options["level"]) ? $options["level"] : 1;
-        $this->cache_service_name = isset($options["service"]) ? $options["service"] : "cache";
+        $this->_cache_service_name = isset($options["service"]) ? $options["service"] : "cache";
         
         $view_level_name = $this->_getViewLevelNameFromLevel( $level );
-        $this->view_levels[$view_level_name]["cache_enabled"] = array(
+        
+        $this->_view_levels[$view_level_name]["cache_enabled"] = array(
             "key" => $key,
             "lifetime" => $lifetime
         );
@@ -150,9 +151,9 @@ class View extends SimoxServiceBase
         
         ob_end_clean();
         
-        if ( isset($this->output_callable) )
+        if ( isset($this->_output_callable) )
         {
-            $content = call_user_func( $this->output_callable, $content );
+            $content = call_user_func( $this->_output_callable, $content );
         }
         
        $this->_content = $content;
@@ -173,14 +174,14 @@ class View extends SimoxServiceBase
             return $this->_content;
         }
         
-        foreach ( $this->view_levels as $view_level )
+        foreach ( $this->_view_levels as $view_level )
         {
             if ( $view_level["is_disabled"] )
             {
                 continue;
             }
             
-            $this->view_levels[$view_level["name"]]["is_disabled"] = true;
+            $this->_view_levels[$view_level["name"]]["is_disabled"] = true;
             
             if ( $view_level["cache_enabled"] != false )
             {
@@ -188,7 +189,7 @@ class View extends SimoxServiceBase
                 return;
             }
             
-            include( $this->views_dir . $view_level["file_name"] . ".phtml" );
+            include( $this->_views_dir . $view_level["file_name"] . ".phtml" );
             return;
         }
     }
@@ -198,12 +199,14 @@ class View extends SimoxServiceBase
         /**
          * If the cache does not exist, create the cache
          */
-        $cache = $this->cache_service_name;
+        $cache = $this->_cache_service_name;
         
         if ( !$this->$cache->exists( $view_level["cache_enabled"]["key"], $view_level["cache_enabled"]["lifetime"] ) )
         {
             $this->$cache->start( $view_level["cache_enabled"]["key"] );
-            include( $this->views_dir . $view_level["file_name"] . ".phtml" );
+            
+            include( $this->_views_dir . $view_level["file_name"] . ".phtml" );
+            
             $this->$cache->save();
             
         }
@@ -216,7 +219,7 @@ class View extends SimoxServiceBase
      */
     private function _getViewLevelNameFromLevel( $view_level_level )
     {
-        foreach ( $this->view_levels as $view_level )
+        foreach ( $this->_view_levels as $view_level )
         {
             if ( $view_level["level"] == $view_level_level )
             {
@@ -230,7 +233,7 @@ class View extends SimoxServiceBase
      */
     private function _getViewLevelFromViewLevelName( $view_level_name )
     {
-        foreach ( $this->view_levels as $view_level )
+        foreach ( $this->_view_levels as $view_level )
         {
             if ( $view_level["name"] == $view_level_name )
             {
