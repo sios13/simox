@@ -7,9 +7,9 @@ class Tag extends SimoxServiceBase
     
     /* ===== TITLE ===== */
     
-    private $title;
-    private $title_append;
-    private $title_prepend;
+    private $_title;
+    private $_title_append;
+    private $_title_prepend;
 
     /**
      * Sets a title
@@ -17,7 +17,7 @@ class Tag extends SimoxServiceBase
      */
     public function setTitle( $title )
     {
-        $this->title = $title;
+        $this->_title = $title;
     }
     
     /**
@@ -26,7 +26,7 @@ class Tag extends SimoxServiceBase
      */
     public function prependTitle( $title_prepend )
     {
-        $this->title_prepend = $title_prepend;
+        $this->_title_prepend = $title_prepend;
     }
     
     /**
@@ -35,7 +35,7 @@ class Tag extends SimoxServiceBase
      */
     public function appendTitle( $title_append )
     {
-        $this->title_append = $title_append;
+        $this->_title_append = $title_append;
     }
     
     /**
@@ -43,7 +43,7 @@ class Tag extends SimoxServiceBase
      */
     public function getTitle()
     {
-        return "<title>" . $this->title . $this->title_prepend . $this->title_append . "</title>";
+        return "<title>" . $this->_title . $this->_title_prepend . $this->_title_append . "</title>";
     }
     
     /* ===== LINKS ===== */
@@ -64,9 +64,9 @@ class Tag extends SimoxServiceBase
     {
         $basePath = "";
         
-        if ($local_path)
+        if ( $local_path )
         {
-            $basePath = $this->url->getBaseUri();
+            $basePath = $this->url->getBasePath();
         }
 		
         $link = "<a href='$basePath$path'>$text</a>";
@@ -83,7 +83,7 @@ class Tag extends SimoxServiceBase
      */
 	public function image( $path, $alt, $options = array() )
 	{
-        $basePath = $this->url->getBaseUri();
+        $basePath = $this->url->getBasePath();
         
 		$image_tag = "<img src='". $basePath . $path ."'";
         $image_tag .= " alt='". $alt ."'";
@@ -111,7 +111,7 @@ class Tag extends SimoxServiceBase
      */
 	public function stylesheetLink( $path, $local_path = true )
 	{
-        $stylesheet_path = ($local_path ? $this->url->getBaseUri() : "") . $path;
+        $stylesheet_path = ($local_path ? $this->url->getBasePath() : "") . "public/" . $path;
         
         $stylesheet_tag = "<link href='" . $stylesheet_path . "' rel='stylesheet' type='text/css'>";
         
@@ -126,7 +126,7 @@ class Tag extends SimoxServiceBase
      */
     public function javascriptInclude( $path, $local_path = true )
     {
-        $javascript_path = ($local_path ? $this->url->getBaseUri() : "") . $path;
+        $javascript_path = ($local_path ? $this->url->getBasePath() : "") . $path;
         
         $javascript_tag = "<script src='" . $javascript_path . "'></script>";
         
