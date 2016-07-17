@@ -15,7 +15,7 @@ class View extends SimoxServiceBase
     
     public function __construct()
 	{
-        $this->views_dir = realpath( __DIR__ . "/../../app/views" ) . "/";
+        $this->views_dir = $this->url->getBasePath() . "/app/views/";
         
         $this->view_levels = array(
             "MAIN_VIEW" => array(
