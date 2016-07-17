@@ -3,7 +3,7 @@ namespace Simox;
 
 class Router extends SimoxServiceBase
 {
-    private $routes;
+    private $_routes;
     
     private $_controller_name;
     private $_action_name;
@@ -36,18 +36,18 @@ class Router extends SimoxServiceBase
      * @param string $path
      * @param string $target the target controller#action
      */
-    public function addRoute($path, $target)
+    public function addRoute( $path, $target )
     {
-        if ( !is_array($target) )
+        if ( is_array($target) )
+        {
+            $controller_name = $target["controller"];
+            $action_name = $target["action"];
+        }
+        else
         {
             $target = explode( "#", $target );
             $controller_name = str_replace( "Controller", "", $target[0] );
             $action_name = str_replace( "Action", "", $target[1] );
-        }
-        else
-        {
-            $controller_name = $target["controller"];
-            $action_name = $target["action"];
         }
         
         $this->_routes[] = array(
@@ -66,69 +66,88 @@ class Router extends SimoxServiceBase
      */
     public function handle()
     {
-        // Get requested url
-        $requestUrl = isset($_SERVER["REQUEST_URI"]) ? $_SERVER["REQUEST_URI"] : "/";
+        /**
+         * Get requested url
+         */
+        $request_url = $this->request->getServer("REQUEST_URI");
         
-        // Remove base uri from request url
-        $requestUrl = substr( $requestUrl, strlen($this->url->getBaseUri()) );
+        /**
+         * Remove base uri from request url
+         */
+        $request_url = str_replace( $this->url->getBaseUri(), "", $request_url );
         
-        // Add slash to request url if it does not exists
-        if ($requestUrl[0] !== "/")
+        /**
+         * If there is no prepending slash, add it
+         */
+        if ( $request_url != "" && $request_url[0] !== "/" )
         {
-            $requestUrl = "/" . $requestUrl;
+            $request_url = "/" . $request_url;
         }
         
-        // Add trailing slash to request url if it does not exists
-        if ($requestUrl[strlen($requestUrl)-1] !== "/")
+        /**
+         * If there is no appending slash, add it
+         */
+        if ($request_url[strlen($request_url)-1] !== "/")
         {
-            $requestUrl = $requestUrl . "/";
+            $request_url = $request_url . "/";
         }
         
-        // Get request method
-        $requestMethod = isset($_SERVER["REQUEST_METHOD"]) ? $_SERVER["REQUEST_METHOD"] : "GET";
+        /**
+         * Get request method
+         */
+        $request_method = $this->request->getServer( "REQUEST_METHOD" );
 
         foreach ($this->_routes as $route)
         {
             /*
             // Check if request method matches. If not, continue to next route
-            if ($route["method"] !== $requestMethod)
+            if ($route["method"] !== $request_method)
             {
                 continue;
             }
             */
-            // Add slash to request url if it does not exists
+            
+            /**
+             * Add slash to request url if it does not exists
+             */
             if ($route["path"][0] !== "/")
             {
                 $route["path"] = "/" . $route["path"];
             }
             
-            // Add trailing slash to route url if it does not exists
+            /**
+             * Add trailing slash to route url if it does not exists
+             */
             if ($route["path"][strlen($route["path"])-1] !== "/")
             {
                 $route["path"] = $route["path"] . "/";
             }
             
-            $explodedRouteUrl = explode( "/", $route["path"] );
-            $explodedRequestUrl = explode( "/", $requestUrl );
+            $exploded_route_url = explode( "/", $route["path"] );
+            $exploded_request_url = explode( "/", $request_url );
             
-            // Check if request and route url has the same number of parts. If not, continue to next route
-            if ( count($explodedRouteUrl) != count($explodedRequestUrl) )
+            /**
+             * Check if request and route url has the same number of parts. If not, continue to next route
+             */
+            if ( count($exploded_route_url) != count($exploded_request_url) )
             {
                 continue;
             }
             
             $params = array();
             
-            // Checks if every part of the url:s are the same
-            for ($i = 0; $i < count($explodedRouteUrl); $i++)
+            /**
+             * Checks if every part of the url:s are the same
+             */
+            for ($i = 0; $i < count($exploded_route_url); $i++)
             {
-                if ( $explodedRouteUrl[$i] ==  "{param}" )
+                if ( $exploded_route_url[$i] ==  "{param}" )
                 {
-                    $params[] = $explodedRequestUrl[$i];
+                    $params[] = $exploded_request_url[$i];
                     continue;
                 }
                 
-                if ( $explodedRouteUrl[$i] != $explodedRequestUrl[$i] )
+                if ( $exploded_route_url[$i] != $exploded_request_url[$i] )
                 {
                     continue 2;
                 }
