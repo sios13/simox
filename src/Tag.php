@@ -62,14 +62,14 @@ class Tag extends SimoxServiceBase
      */
     public function linkTo( $path, $text, $local_path = true )
     {
-        $basePath = "";
+        $base_path = "";
         
         if ( $local_path )
         {
-            $basePath = $this->url->getBasePath();
+            $base_path = $this->url->getBaseUri();
         }
 		
-        $link = "<a href='$basePath$path'>$text</a>";
+        $link = "<a href='$base_path$path'>$text</a>";
 		
         return $link;
     }
@@ -83,9 +83,9 @@ class Tag extends SimoxServiceBase
      */
 	public function image( $path, $alt, $options = array() )
 	{
-        $basePath = $this->url->getBasePath();
+        $base_path = $this->url->getBaseUri();
         
-		$image_tag = "<img src='". $basePath . $path ."'";
+		$image_tag = "<img src='". $base_path . $path ."'";
         $image_tag .= " alt='". $alt ."'";
 		
         if ( isset($options["style"]) )
@@ -111,7 +111,7 @@ class Tag extends SimoxServiceBase
      */
 	public function stylesheetLink( $path, $local_path = true )
 	{
-        $stylesheet_path = ($local_path ? $this->url->getBasePath() : "") . "public/" . $path;
+        $stylesheet_path = ($local_path ? $this->url->getBaseUri() : "") . $path;
         
         $stylesheet_tag = "<link href='" . $stylesheet_path . "' rel='stylesheet' type='text/css'>";
         
@@ -126,7 +126,7 @@ class Tag extends SimoxServiceBase
      */
     public function javascriptInclude( $path, $local_path = true )
     {
-        $javascript_path = ($local_path ? $this->url->getBasePath() : "") . $path;
+        $javascript_path = ($local_path ? $this->url->getBaseUri() : "") . $path;
         
         $javascript_tag = "<script src='" . $javascript_path . "'></script>";
         
