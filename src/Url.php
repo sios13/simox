@@ -3,11 +3,22 @@ namespace Simox;
 
 class Url extends SimoxServiceBase
 {
-	protected $base_uri;
+    /**
+     * Base path is the path to the project install folder relative to the server root
+     */
+	private $_base_uri;
+    
+    /**
+     * Base path prepend is prepended to the base path
+     */
+    private $_base_uri_prepend;
 	
 	public function __construct()
     {
-        $this->base_uri = "/";
+        /**
+         * This is the base path prepend when using composer
+         */
+        $this->_base_uri_prepend = "/../../../../../";
     }
 	
     /**
@@ -17,43 +28,50 @@ class Url extends SimoxServiceBase
      */
 	public function setBaseUri( $base_uri )
 	{
-		$this->base_uri = $base_uri;
+        /**
+         * If there is no appending slash, add it
+         */
+        if ($base_uri[strlen($base_uri)-1] !== "/")
+        {
+            $base_uri = $base_uri . "/";
+        }
+        
+		$this->_base_uri = $base_uri;
 	}
 	
     /**
-     * Returns the base uri
+     * Returns the base path
      * 
      * @return string
      */
 	public function getBaseUri()
 	{
-		return $this->base_uri;
+		return $this->_base_uri;
 	}
     
+    public function setBaseUriPrepend( $path )
+    {
+        $this->_base_uri_prepend = $path;
+    }
+    
+    public function getBaseUriPrepend()
+    {
+        return $this->_base_uri_prepend;
+    }
+    
+    public function getBasePath()
+    {
+        return $this->_base_uri_prepend . $this->_base_uri;
+    }
+    
     /**
-     * Generate a URL appending the URI to the base URI
+     * Appends a given path to the base path
      * 
      * @param string $path
      * @return string
      */
     public function get( $path )
     {
-        return $this->base_uri . $path;
-    }
-    
-    /**
-     * NOT IMPLEMENTED
-     * Generate a URL for a static resource
-     * 
-     * @param string $path
-     */
-    public function getStatic( $path )
-    {
-        
-    }
-    
-    public function getInstallPath()
-    {
-        return __DIR__;
+        return $this->getBasePath() . $path;
     }
 }
