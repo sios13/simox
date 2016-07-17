@@ -40,8 +40,8 @@ class Loader
     }
     
     /**
-    * The autoloader will look in the registered directories
-    */
+     * The autoloader will look in the registered directories
+     */
     public function registerDirs( $dirs )
     {
         foreach( $dirs as $dir )
@@ -52,7 +52,9 @@ class Loader
 
     public function register()
     {
-        // Register autoloader
+        /**
+         * Register autoloader
+         */
         spl_autoload_register( function($name) {
             foreach( $this->registered_directories as $dir )
             {
@@ -68,11 +70,5 @@ class Loader
                 }
             }
         } );
-        
-        // Include vendor / composer autoloader
-        if ( file_exists(__DIR__ . "/../autoload.php") )
-        {
-            include( __DIR__ . "/../autoload.php" );
-        }
     }
 }
