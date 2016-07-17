@@ -15,6 +15,8 @@ class Url extends SimoxServiceBase
 	
 	public function __construct()
     {
+        $this->_base_uri = "/";
+        
         /**
          * This is the base path prepend when using composer
          */
@@ -28,6 +30,14 @@ class Url extends SimoxServiceBase
      */
 	public function setBaseUri( $base_uri )
 	{
+        /**
+         * If there is no prepending slash, add it
+         */
+        if ( $base_uri[0] !== "/" )
+        {
+            $base_uri = "/" . $base_uri;
+        }
+        
         /**
          * If there is no appending slash, add it
          */
@@ -65,13 +75,13 @@ class Url extends SimoxServiceBase
     }
     
     /**
-     * Appends a given path to the base path
+     * Appends a given path to the base uri
      * 
      * @param string $path
      * @return string
      */
     public function get( $path )
     {
-        return $this->getBasePath() . $path;
+        return $this->getBaseUri() . $path;
     }
 }
