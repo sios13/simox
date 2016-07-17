@@ -17,7 +17,7 @@ class View extends SimoxServiceBase
     
     public function __construct()
 	{
-        $this->_views_dir = $this->url->getBaseUri() . "/app/views/";
+        $this->_views_dir = $this->url->getBasePath() . "/public/" . "../app/views/";
         
         $this->_render_completed = false;
         
@@ -70,9 +70,12 @@ class View extends SimoxServiceBase
         $this->$name = $value;
     }
     
+    /**
+     * Set the views dir relative to the public folder
+     */
     public function setViewsDir( $views_dir )
     {
-        $this->_views_dir = $views_dir;
+        $this->_views_dir = $this->url->getBasePath() . "/public/" . $views_dir;
     }
     
     /**
