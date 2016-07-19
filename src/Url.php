@@ -4,23 +4,13 @@ namespace Simox;
 class Url extends SimoxServiceBase
 {
     /**
-     * Base path is the path to the project install folder relative to the server root
+     * Base uri is prepended to all resources (css, images, links..)
      */
 	private $_base_uri;
-    
-    /**
-     * Base path prepend is prepended to the base path
-     */
-    private $_base_uri_prepend;
 	
 	public function __construct()
     {
         $this->_base_uri = "/";
-        
-        /**
-         * This is the base path prepend when using composer
-         */
-        $this->_base_uri_prepend = "/../../../../../";
     }
 	
     /**
@@ -50,7 +40,7 @@ class Url extends SimoxServiceBase
 	}
 	
     /**
-     * Returns the base path
+     * Returns the base uri
      * 
      * @return string
      */
@@ -58,21 +48,6 @@ class Url extends SimoxServiceBase
 	{
 		return $this->_base_uri;
 	}
-    
-    public function setBaseUriPrepend( $path )
-    {
-        $this->_base_uri_prepend = $path;
-    }
-    
-    public function getBaseUriPrepend()
-    {
-        return $this->_base_uri_prepend;
-    }
-    
-    public function getBasePath()
-    {
-        return $this->_base_uri_prepend . $this->_base_uri;
-    }
     
     /**
      * Appends a given path to the base uri
@@ -83,5 +58,10 @@ class Url extends SimoxServiceBase
     public function get( $path )
     {
         return $this->getBaseUri() . $path;
+    }
+    
+    public function getRootPath()
+    {
+        return "../";
     }
 }
