@@ -9,7 +9,7 @@ class Sqlite extends Database
     
     public function __construct( $params )
     {
-        $this->db_name = $params["db_name"];
+        $this->db_name = $params["db_name"] . ".db";
     }
     
     public function initialize()
