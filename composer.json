@@ -17,7 +17,6 @@
     },
     "autoload": {
         "classmap": [
-            "app/controllers",
             "app/models",
             "app/plugins",
             "app/library"
