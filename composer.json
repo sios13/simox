@@ -17,7 +17,11 @@
     },
     "autoload": {
         "psr-4": {
-            "Simox\\": ["src/", "src/Config/", "src/Database/", "src/Controller/", "src/Dispatcher"]
+            "Simox\\": [
+                "src/",
+                "src/Config/",
+                "src/Database/"
+            ]
         }
     }
 }
