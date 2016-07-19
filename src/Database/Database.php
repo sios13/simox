@@ -1,5 +1,5 @@
 <?php
-namespace Simox\Database;
+namespace Simox;
 
 abstract class Database
 {

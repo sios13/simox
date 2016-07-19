@@ -18,7 +18,8 @@
     "autoload": {
         "psr-4": {
             "Simox\\": "src/",
-            "Simox\\Config\\" : "src/config/"
+            "Simox\\" : "src/Config/",
+            "Simox\\" : "src/Database/"
         }
     }
 }

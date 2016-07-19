@@ -1,7 +1,7 @@
 <?php
 namespace Simox\Database\Adapter;
 
-use Simox\Database\Database;
+use Simox\Database;
 
 class Sqlite extends Database
 {
