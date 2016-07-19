@@ -16,17 +16,8 @@
         "php": ">=5.3.0"
     },
     "autoload": {
-        "classmap": [
-            "app/models",
-            "app/plugins",
-            "app/library"
-        ],
         "psr-4": {
-            "Simox\\": "src/",
-            "Simox\\": "src/Config/",
-            "Simox\\": "src/Database/",
-            "Simox\\": "src/Controller/",
-            "Simox\\": "src/Dispatcher/"
+            "Simox\\": ["src/", "src/Config/", "src/Database/", "src/Controller/", "src/Dispatcher"]
         }
     }
 }
