@@ -75,7 +75,7 @@ class View extends SimoxServiceBase
      */
     public function setViewsDir( $views_dir )
     {
-        $this->_views_dir = $this->url->getBasePath() . "/public/" . $views_dir;
+        $this->_views_dir = $views_dir;
     }
     
     /**
@@ -147,7 +147,6 @@ class View extends SimoxServiceBase
     {
         ob_start();
         
-        // Output enabled view levels
         $this->getContent();
         
         $content = ob_get_contents();
@@ -199,11 +198,11 @@ class View extends SimoxServiceBase
     
     public function getCacheContent( $view_level )
     {
+        $cache = $this->_cache_service_name;
+        
         /**
          * If the cache does not exist, create the cache
          */
-        $cache = $this->_cache_service_name;
-        
         if ( !$this->$cache->exists( $view_level["cache_enabled"]["key"], $view_level["cache_enabled"]["lifetime"] ) )
         {
             $this->$cache->start( $view_level["cache_enabled"]["key"] );
