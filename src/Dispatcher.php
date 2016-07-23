@@ -3,9 +3,7 @@ namespace Simox;
 
 class Dispatcher extends SimoxServiceBase implements Events\EventsAwareInterface
 {
-    private $_controller_name;
-    private $_action_name;
-    private $_params;
+    private $_route;
 	
 	private $_events_manager;
 	
@@ -19,8 +17,6 @@ class Dispatcher extends SimoxServiceBase implements Events\EventsAwareInterface
 
     public function __construct()
     {
-        $this->_params = array();
-        
 		$this->was_forwarded = false;
     }
     
@@ -34,19 +30,9 @@ class Dispatcher extends SimoxServiceBase implements Events\EventsAwareInterface
 		return $this->_events_manager;
 	}
     
-    public function setControllerName( $controller_name )
+    public function setRoute( $route )
     {
-        $this->_controller_name = $controller_name;
-    }
-    
-    public function setActionName( $action_name )
-    {
-        $this->_action_name = $action_name;
-    }
-    
-    public function setParams( $params )
-    {
-        $this->_params = $params;
+        $this->_route = $route;
     }
 	
     /**
@@ -54,7 +40,7 @@ class Dispatcher extends SimoxServiceBase implements Events\EventsAwareInterface
      */
 	public function getControllerName()
 	{
-        return $this->_controller_name;
+        return $this->_route->getControllerName();
 	}
 	
     /**
@@ -62,7 +48,7 @@ class Dispatcher extends SimoxServiceBase implements Events\EventsAwareInterface
      */
 	public function getActionName()
 	{
-        return $this->_action_name;
+        return $this->_route->getActionName();
 	}
     
     /**
@@ -85,7 +71,7 @@ class Dispatcher extends SimoxServiceBase implements Events\EventsAwareInterface
             /**
              * If the event returns false, exit early and don't throw exception
              */
-            if ( $this->_events_manager->fire( "dispatch:beforeException", $this, array("exception" => $exception) ) == false )
+            if ( $this->_events_manager->fire( "dispatch:beforeException", $this, array("exception" => $exception) ) === false )
             {
                 return false;
             }
@@ -103,9 +89,11 @@ class Dispatcher extends SimoxServiceBase implements Events\EventsAwareInterface
      */
 	public function forward( $params )
 	{
-        $this->_controller_name = $params["controller"];
-        $this->_action_name     = $params["action"];
-        $this->_params          = isset($params["params"]) ? $params["params"] : array();
+        //$route = new Router\Route();
+        
+        $this->_route->setControllerName( $params["controller"] );
+        $this->_route->setActionName( $params["action"] );
+        $this->_route->setParams( isset($params["params"]) ? $params["params"] : array() );
         
 		$this->_was_forwarded = true;
 	}
@@ -137,22 +125,23 @@ class Dispatcher extends SimoxServiceBase implements Events\EventsAwareInterface
 				break;
 			}
             
-            $controller_class = ucfirst($this->_controller_name) . "Controller";
+            $controller_name = $this->_route->getControllerName();
+            $action_name = $this->_route->getActionName();
             
-            if ( !class_exists($controller_class) )
+            if ( !class_exists($controller_name) )
             {
-                if ( $this->_throwDispatchException( $this->_controller_name . " controller class cannot be loaded.", self::EXCEPTION_CONTROLLER_NOT_FOUND ) == false )
+                if ( $this->_throwDispatchException( $controller_name . " controller class cannot be loaded.", self::EXCEPTION_CONTROLLER_NOT_FOUND ) == false )
                 {
                     continue;
                 }
                 break;
             }
             
-            $controller = new $controller_class();
+            $controller = new $controller_name();
             
-            if ( !method_exists($controller, $this->_action_name . "Action") )
+            if ( !method_exists($controller, $action_name) )
             {
-                if ( $this->_throwDispatchException( $this->_action_name . "Action action does not exist in " . $controller_class . ".", self::EXCEPTION_ACTION_NOT_FOUND ) == false )
+                if ( $this->_throwDispatchException( $action_name . "Action action does not exist in " . $controller_name . ".", self::EXCEPTION_ACTION_NOT_FOUND ) == false )
                 {
                     continue;
                 }
@@ -181,7 +170,7 @@ class Dispatcher extends SimoxServiceBase implements Events\EventsAwareInterface
 			/**
              * Calling action in controller with params
              */
-			call_user_func_array( array($controller, $this->_action_name . "Action"), $this->_params );
+			call_user_func_array( array($controller, $action_name), $this->_route->getParams() );
 			
 			/**
              * If there was a forward in the action
