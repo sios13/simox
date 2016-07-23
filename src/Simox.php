@@ -17,7 +17,8 @@ class Simox
             "request"    => function() {return new Request();},
             "flash"      => function() {return new Flash();},
             "cache"      => function() {return new Cache();},
-            "response"   => function() {return new Response();}
+            "response"   => function() {return new Response();},
+            "loader"     => function() {return new Loader();}
         );
     }
     
@@ -62,15 +63,15 @@ class Simox
     
     /**
      * The router starts matching the requested url with the routes.
-     * The dispatcher handles the match result.
+     * The dispatcher handles the route result.
      */
     public function handle()
     {
-        $this->router->handle();
+        $this->loader->register();
         
-        $this->dispatcher->setControllerName( $this->router->getControllerName() );
-        $this->dispatcher->setActionName( $this->router->getActionName() );
-        $this->dispatcher->setParams( $this->router->getParams() );
+        $this->router->handle( $this->request->getRequestUri() );
+        
+        $this->dispatcher->setRoute( $this->router->getRoute() );
         
         $this->dispatcher->dispatch();
         
