@@ -40,4 +40,9 @@ class Request extends SimoxServiceBase
 			return false;
 		}
     }
+    
+    public function getRequestUri()
+    {
+        return $this->getServer( "REQUEST_URI" );
+    }
 }
