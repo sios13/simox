@@ -1,145 +1,102 @@
 <?php
 namespace Simox;
 
+use Simox\Router\Route;
+
 class Router extends SimoxServiceBase
 {
     private $_routes;
     
-    private $_controller_name;
-    private $_action_name;
-    private $_params;
+    private $_route;
+    
+    private $_not_found_route;
     
     public function __construct()
     {
         $this->_routes = array();
+        
+        $this->_route = new Route();
     }
     
-    public function getControllerName()
+    public function getRoute()
     {
-        return $this->_controller_name;
+        return $this->_route;
     }
     
-    public function getActionName()
+    /**
+     * Helper function to create a route
+     */
+    private function createRoute( $uri, $controller_action = null )
     {
-        return $this->_action_name;
+        $route = new Route( $uri );
+        
+        if ( isset($controller_action) )
+        {
+            if ( is_array($controller_action) )
+            {
+                $route->setControllerName( $controller_action["controller"] );
+                $route->setActionName( $controller_action["action"] );
+            }
+            else
+            {
+                $controller_action = explode( "#", $controller_action );
+                
+                $route->setControllerName( $controller_action[0] );
+                $route->setActionName( $controller_action[1] );
+            }
+        }
+        
+        return $route;
     }
     
-    public function getParams()
+    public function notFoundRoute( $uri, $controller_action )
     {
-        return $this->_params;
+        $this->_not_found_route = $this->createRoute( $uri, $controller_action );
     }
     
     /**
      * Adds a route.
-     * Routes are compared to the requested route.
      * 
-     * @param string $path
+     * @param string $uri
      * @param string $target the target controller#action
      */
-    public function addRoute( $path, $target )
+    public function addRoute( $uri, $controller_action )
     {
-        if ( is_array($target) )
-        {
-            $controller_name = $target["controller"];
-            $action_name = $target["action"];
-        }
-        else
-        {
-            $target = explode( "#", $target );
-            $controller_name = str_replace( "Controller", "", $target[0] );
-            $action_name = str_replace( "Action", "", $target[1] );
-        }
-        
-        $this->_routes[] = array(
-            "path" => $path,
-            "controller_name" => strtolower($controller_name),
-            "action_name" => strtolower($action_name)
-        );
+        $this->_routes[] = $this->createRoute( $uri, $controller_action );
     }
     
     /**
-     * Match the requested url with the routes
-     * If match, returns route information
-     * If no match, returns false
-     * 
-     * @return
+     * Match the requested uri with the route uris
      */
-    public function handle()
+    public function handle( $request_uri )
     {
         /**
-         * Get requested url
+         * Remove the base uri from the request uri
          */
-        $request_url = $this->request->getServer("REQUEST_URI");
+        $request_uri = str_replace( $this->url->getBaseUri(), "", $request_uri );
         
         /**
-         * Remove base uri from request url
-         * If base uri is '/', the base uri has not been modified, so do not do str_replace
-         * Also, if base uri is '/', doing str_replace causes bugs
+         * If the base uri replaces the entire request uri
+         * (If base uri equals request uri)
          */
-        if ( $this->url->getBaseUri() != "/" )
+        if ( $request_uri == null )
         {
-            $request_url = str_replace( $this->url->getBaseUri(), "", $request_url );
+            $request_uri = "/";
         }
         
-        if ( $request_url == "" )
-        {
-            $request_url = "/";
-        }
+        $request_route = new Route( $request_uri );
         
-        /**
-         * If there is no prepending slash, add it
-         */
-        if ( $request_url[0] !== "/" )
-        {
-            $request_url = "/" . $request_url;
-        }
+        $request_route_uri_fragments = explode( "/", $request_route->getUri() );
         
-        /**
-         * If there is no appending slash, add it
-         */
-        if ($request_url[strlen($request_url)-1] !== "/")
-        {
-            $request_url = $request_url . "/";
-        }
-        
-        /**
-         * Get request method
-         */
-        $request_method = $this->request->getServer( "REQUEST_METHOD" );
-
         foreach ($this->_routes as $route)
         {
-            /*
-            // Check if request method matches. If not, continue to next route
-            if ($route["method"] !== $request_method)
-            {
-                continue;
-            }
-            */
+            $route_uri_fragments = explode( "/", $route->getUri() );
             
             /**
-             * Add slash to request url if it does not exists
+             * Check if request uri and route uri has the same number of fragments. 
+             * If not, continue to next route.
              */
-            if ($route["path"][0] !== "/")
-            {
-                $route["path"] = "/" . $route["path"];
-            }
-            
-            /**
-             * Add trailing slash to route url if it does not exists
-             */
-            if ($route["path"][strlen($route["path"])-1] !== "/")
-            {
-                $route["path"] = $route["path"] . "/";
-            }
-            
-            $exploded_route_url = explode( "/", $route["path"] );
-            $exploded_request_url = explode( "/", $request_url );
-            
-            /**
-             * Check if request and route url has the same number of parts. If not, continue to next route
-             */
-            if ( count($exploded_route_url) != count($exploded_request_url) )
+            if ( count($route_uri_fragments) != count($request_route_uri_fragments) )
             {
                 continue;
             }
@@ -147,25 +104,34 @@ class Router extends SimoxServiceBase
             $params = array();
             
             /**
-             * Checks if every part of the url:s are the same
+             * Checks if every fragment of the uris are the same
              */
-            for ($i = 0; $i < count($exploded_route_url); $i++)
+            for ($i = 0; $i < count($route_uri_fragments); $i++)
             {
-                if ( $exploded_route_url[$i] ==  "{param}" )
+                if ( $route_uri_fragments[$i] ==  "{param}" )
                 {
-                    $params[] = $exploded_request_url[$i];
+                    $params[] = $request_route_uri_fragments[$i];
                     continue;
                 }
                 
-                if ( $exploded_route_url[$i] != $exploded_request_url[$i] )
+                if ( $route_uri_fragments[$i] != $request_route_uri_fragments[$i] )
                 {
                     continue 2;
                 }
             }
             
-            $this->_controller_name = $route["controller_name"];
-            $this->_action_name = $route["action_name"];
-            $this->_params = $params;
+            $request_route->setControllerName( $route->getControllerName() );
+            $request_route->setActionName( $route->getActionName() );
+            $request_route->setParams( $params );
+            
+            $this->_route = $request_route;
+            
+            return;
+        }
+        
+        if ( isset($this->_not_found_route) )
+        {
+            $this->_route = $this->_not_found_route;
         }
     }
 }
