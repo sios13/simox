@@ -20,7 +20,8 @@
             "Simox\\": [
                 "src/",
                 "src/Config/",
-                "src/Database/"
+                "src/Database/",
+                "src/Router/"
             ]
         }
     }
