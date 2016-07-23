@@ -3,6 +3,8 @@ namespace Simox;
 
 class Url extends SimoxServiceBase
 {
+    private $_root_path;
+    
     /**
      * Base uri is prepended to all resources (css, images, links..)
      */
@@ -11,6 +13,13 @@ class Url extends SimoxServiceBase
 	public function __construct()
     {
         $this->_base_uri = "/";
+        
+        $this->_root_path = realpath(__DIR__ . "/../../../../");
+    }
+    
+    public function getRootPath()
+    {
+        return $this->_root_path;
     }
 	
     /**
@@ -58,10 +67,5 @@ class Url extends SimoxServiceBase
     public function get( $path )
     {
         return $this->getBaseUri() . $path;
-    }
-    
-    public function getRootPath()
-    {
-        return "../";
     }
 }
