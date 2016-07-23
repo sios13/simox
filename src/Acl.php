@@ -1,5 +1,4 @@
 <?php
-
 namespace Simox;
 
 class Acl
@@ -7,95 +6,122 @@ class Acl
 	const ALLOW = "ALLOW";
 	const DENY = "DENY";
 	
-	private $default_action;
+	private $_default_action;
 	
-	private $roles;
-	private $resources;
+	private $_roles;
+	private $_routes;
 	
-	private $deny_list;
-	private $allow_list;
+	private $_deny_list;
+	private $_allow_list;
 	
 	public function __construct()
 	{
-		$this->default_action = self::ALLOW;
+		$this->_default_action = self::ALLOW;
 		
-		$this->roles = array();
-		$this->resources = array();
+		$this->_roles = array();
+		$this->_routes = array();
 		
-		$this->allow_list = array();
-		$this->deny_list = array();
+		$this->_allow_list = array();
+		$this->_deny_list = array();
 	}
-	
-	private function _confirmParams( $role, $resource, $action )
-	{
-		$role_exists     = in_array( $role, $this->roles )                  ? true : false;
-		$resource_exists = array_key_exists($resource, $this->resources)    ? true : false;
-		$action_exists   = in_array( $action, $this->resources[$resource] ) ? true : false;
-		
-		if ( $role_exists && $resource_exists && $action_exists )
-		{
-			return true;
-		}
-		
-		return false;
-	}
-	
-	public function allow( $role, $resource, $action )
-	{
-		if ( $this->_confirmParams($role, $resource, $action) )
-		{
-			$this->allow_list[$role][$resource][$action] = true;
-		}
-	}
-	
-	public function deny( $role, $resource, $action )
-	{
-		if ( $this->_confirmParams($role, $resource, $action) )
-		{
-			$this->deny_list[$role][$resource][$action] = true;
-		}
-	}
-	
-	public function isAllowed( $role, $resource, $action )
-	{
-		if ( $this->default_action == "ALLOW" )
-		{
-			$list = $this->deny_list;
-		}
-		else if ( $this->default_action == "DENY" )
-		{
-			$list = $this->allow_list;
-		}
+    
+    /**
+     * Private helper function to create a route
+     */
+    private function _createRoute( $controller_name, $action_name )
+    {
+        $route = new Router\Route();
         
-		if ( isset($list[$role][$resource][$action])
-			&& $list[$role][$resource][$action] == true )
-		{
-			return self::ALLOW;
-		}
+        $route->setControllerName( $controller_name );
+        $route->setActionName( $action_name );
         
-		return self::DENY;
-	}
-	
-	public function addRole( $role )
-	{
-		$this->roles[] = $role;
-	}
-	
-	public function addResource( $resource, $actions )
-	{
-        if ( !isset($this->resources[$resource]) )
+        return $route;
+    }
+    
+    /**
+     * Private helper function to retrieve a route
+     */
+    private function _getRoute( $controller_name, $action_name )
+    {
+        $_route = $this->_createRoute( $controller_name, $action_name );
+        
+        foreach( $this->_routes as $route )
         {
-            $this->resources[$resource] = array();
+            if ( $route->getControllerName() == $_route->getControllerName() && $route->getActionName() == $_route->getActionName() )
+            {
+                return $route;
+            }
         }
-        
-        foreach ($actions as $action)
-        {
-            array_push( $this->resources[$resource], $action );
-        }
-	}
+    }
 	
+    /**
+     * Sets the default action. ALLOW or DENY.
+     */
 	public function setDefaultAction( $default_action )
 	{
-		$this->default_action = $default_action;
+		$this->_default_action = $default_action;
+	}
+    
+	public function addRole( $role_name )
+	{
+		$this->roles[] = $role_name;
+	}
+	
+	public function addRoutes( $controller_name, $action_names )
+	{
+        foreach ( $action_names as $action_name )
+        {
+            $route = $this->_createRoute( $controller_name, $action_name );
+            
+            $this->_routes[] = $route;
+        }
+	}
+	
+    /**
+     * Attach a route with a role in the allow list
+     */
+	public function allow( $role, $controller_name, $action_name )
+	{
+        $route = $this->_getRoute( $controller_name, $action_name );
+        
+        $this->_allow_list[$role][] = $route;
+        
+	}
+	
+    /**
+     * Attach a route with a role in the deny list
+     */
+	public function deny( $role, $resource, $action )
+	{
+        $route = $this->_getRoute( $controller_name, $action_name );
+        
+        $this->_deny_list[$role][] = $route;
+	}
+	
+    /**
+     * Check is role has the route attached
+     */
+	public function isAllowed( $role, $controller_name, $action_name )
+	{
+        $_route = $this->_createRoute( $controller_name, $action_name );
+        
+		if ( $this->_default_action == "ALLOW" )
+		{
+			$list = $this->_deny_list;
+		}
+		else if ( $this->_default_action == "DENY" )
+		{
+			$list = $this->_allow_list;
+		}
+        
+        foreach ( $list[$role] as $route )
+        {
+            if ( $route->getControllerName() == $_route->getControllerName() && $route->getActionName() == $_route->getActionName() )
+            {
+                return self::ALLOW;
+            }
+        }
+        
+        return self::DENY;
 	}
 }
