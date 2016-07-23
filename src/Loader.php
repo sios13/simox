@@ -1,8 +1,11 @@
 <?php
 namespace Simox;
 
-class Loader
+class Loader extends SimoxServiceBase
 {
+    /**
+     * The autoloader will search the registered directories
+     */
     private $registered_directories;
     
     public function __construct()
@@ -10,11 +13,14 @@ class Loader
         $this->registered_directories = array();
     }
     
+    /**
+     * Directories are registered relative to the project root path
+     */
     public function registerDirs( $dirs )
     {
         foreach( $dirs as $dir )
         {
-            $this->registered_directories[] = $dir;
+            $this->registered_directories[] = $this->url->getRootPath() . DIRECTORY_SEPARATOR . $dir;
         }
     }
 
