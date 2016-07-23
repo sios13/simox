@@ -23,7 +23,12 @@ class Mysql extends Database
         if ( !isset( $this->db_connection ) )
         {
             $dsn = "mysql:dbname=" . $this->db_name . ";charset=utf8;host=" . $this->host;
-            $this->db_connection = new \PDO( $dsn, $this->username, $this->password );
+            
+            try {
+                $this->db_connection = new \PDO( $dsn, $this->username, $this->password );
+            } catch ( \PDOException $e ) {
+                throw new \Exception( "Access denied." );
+            }
         }
     }
 }
