@@ -8,11 +8,11 @@ class Url extends SimoxServiceBase
     /**
      * Base uri is prepended to all resources (css, images, links..)
      */
-	private $_base_uri;
+	private $_uri_prefix;
 	
 	public function __construct()
     {
-        $this->_base_uri = "/";
+        $this->_uri_prefix = "/";
         
         $this->_root_path = realpath(__DIR__ . "/../../../../");
     }
@@ -23,29 +23,15 @@ class Url extends SimoxServiceBase
     }
 	
     /**
-     * Sets the base uri
+     * Sets the uri prefix
      * 
-     * @param string $base_uri
+     * @param string $uri_prefix
      */
-	public function setBaseUri( $base_uri )
+	public function setUriPrefix( $uri_prefix )
 	{
-        /**
-         * If there is no prepending slash, add it
-         */
-        if ( $base_uri[0] !== "/" )
-        {
-            $base_uri = "/" . $base_uri;
-        }
+        $uri_prefix = preg_replace( "#/+#", "/", "/" . $uri_prefix . "/" );
         
-        /**
-         * If there is no appending slash, add it
-         */
-        if ($base_uri[strlen($base_uri)-1] !== "/")
-        {
-            $base_uri = $base_uri . "/";
-        }
-        
-		$this->_base_uri = $base_uri;
+		$this->_uri_prefix = $uri_prefix;
 	}
 	
     /**
@@ -53,9 +39,9 @@ class Url extends SimoxServiceBase
      * 
      * @return string
      */
-	public function getBaseUri()
+	public function getUriPrefix()
 	{
-		return $this->_base_uri;
+		return $this->_uri_prefix;
 	}
     
     /**
@@ -66,6 +52,6 @@ class Url extends SimoxServiceBase
      */
     public function get( $path )
     {
-        return $this->getBaseUri() . $path;
+        return preg_replace( "#/+#", "/", $this->getUriPrefix() . $path );
     }
 }
