@@ -210,7 +210,6 @@ class View extends SimoxServiceBase
             include( $this->_views_dir . $view_level["file_name"] . ".phtml" );
             
             $this->$cache->save();
-            
         }
         
         $this->$cache->get( $view_level["cache_enabled"]["key"] );
