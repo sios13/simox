@@ -17,7 +17,12 @@ class Sqlite extends Database
         if ( !isset( $this->db_connection ) )
         {
             $dsn = "sqlite:" . $this->db_name;
-            $this->db_connection = new \PDO( $dsn );
+            
+            try {
+                $this->db_connection = new \PDO( $dsn );
+            } catch ( \PDOException $e ) {
+                throw new \Exception( "Database exception. Access denied." );
+            }
         }
     }
 }
