@@ -13,7 +13,12 @@ class Route
     
     public function __construct( $uri = null )
     {
-        $this->_uri = isset($uri) ? $this->_format( $uri ) : null;
+        if ( isset($uri) )
+        {
+            $uri = preg_replace( "#/+#", "/", "/" . $uri . "/" );
+        }
+        
+        $this->_uri = $uri;
     }
     
     public function getUri()
@@ -61,29 +66,5 @@ class Route
     public function setParams( $params )
     {
         $this->_params = $params;
-    }
-    
-    /**
-     * Helper function to format route uris and request uris to the same consistent format
-     */
-    private function _format( $target )
-    {
-        /**
-         * If there is no prepending slash, add it
-         */
-        if ( $target[0] != "/" )
-        {
-            $target = "/" . $target;
-        }
-        
-        /**
-         * If there is no appending slash, add it
-         */
-        if ( $target[strlen($target)-1] != "/" )
-        {
-            $target = $target . "/";
-        }
-        
-        return $target;
     }
 }
