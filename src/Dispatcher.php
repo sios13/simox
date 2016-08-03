@@ -89,8 +89,6 @@ class Dispatcher extends SimoxServiceBase implements Events\EventsAwareInterface
      */
 	public function forward( $params )
 	{
-        //$route = new Router\Route();
-        
         $this->_route->setControllerName( $params["controller"] );
         $this->_route->setActionName( $params["action"] );
         $this->_route->setParams( isset($params["params"]) ? $params["params"] : array() );
@@ -119,7 +117,7 @@ class Dispatcher extends SimoxServiceBase implements Events\EventsAwareInterface
 		{
 			$number_dispatches++;
 			
-			if ($number_dispatches == 100)
+			if ( $number_dispatches == 100 )
             {
                 $this->_throwDispatchException( "Dispatch error. Cyclic routing.", self::EXCEPTION_CYCLIC_ROUTING );
 				break;
@@ -127,6 +125,7 @@ class Dispatcher extends SimoxServiceBase implements Events\EventsAwareInterface
             
             $controller_name = $this->_route->getControllerName();
             $action_name = $this->_route->getActionName();
+            $params = $this->_route->getParams();
             
             if ( !class_exists($controller_name) )
             {
@@ -170,12 +169,12 @@ class Dispatcher extends SimoxServiceBase implements Events\EventsAwareInterface
 			/**
              * Calling action in controller with params
              */
-			call_user_func_array( array($controller, $action_name), $this->_route->getParams() );
+			call_user_func_array( array($controller, $action_name), $params );
 			
 			/**
              * If there was a forward in the action
              */
-			if ($this->_was_forwarded == true)
+			if ( $this->_was_forwarded )
             {
 				$this->_was_forwarded = false;
 				continue;
