@@ -26,7 +26,7 @@ class Router extends SimoxServiceBase
     /**
      * Helper function to create a route
      */
-    private function createRoute( $uri, $controller_action = null )
+    private function _createRoute( $uri, $controller_action )
     {
         $route = new Route( $uri );
         
@@ -51,7 +51,7 @@ class Router extends SimoxServiceBase
     
     public function notFoundRoute( $uri, $controller_action )
     {
-        $this->_not_found_route = $this->createRoute( $uri, $controller_action );
+        $this->_not_found_route = $this->_createRoute( $uri, $controller_action );
     }
     
     /**
@@ -62,18 +62,34 @@ class Router extends SimoxServiceBase
      */
     public function addRoute( $uri, $controller_action )
     {
-        $this->_routes[] = $this->createRoute( $uri, $controller_action );
+        $this->_routes[] = $this->_createRoute( $uri, $controller_action );
     }
     
     /**
-     * Match the requested uri with the route uris
+     * 
+     */
+    public function reverseRoute( $controller_name, $action_name )
+    {
+        $_route = $this->_createRoute( null, array("controller" => $controller_name, "action" => $action_name) );
+        
+        foreach ( $this->_routes as $route )
+        {
+            if ( $_route->getControllerName() == $route->getControllerName() && $_route->getActionName() == $route->getActionName() )
+            {
+                return $route->getUri();
+            }
+        }
+    }
+    
+    /**
+     * Match a request uri with the route uris
      */
     public function handle( $request_uri )
     {
         /**
          * Remove the base uri from the request uri
          */
-        $request_uri = str_replace( $this->url->getBaseUri(), "", $request_uri );
+        $request_uri = str_replace( $this->url->getUriPrefix(), "", $request_uri );
         
         /**
          * If the base uri replaces the entire request uri
