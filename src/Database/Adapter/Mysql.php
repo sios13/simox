@@ -27,7 +27,7 @@ class Mysql extends Database
             try {
                 $this->db_connection = new \PDO( $dsn, $this->username, $this->password );
             } catch ( \PDOException $e ) {
-                throw new \Exception( "Access denied." );
+                throw new \Exception( "Database exception. Access denied." );
             }
         }
     }
