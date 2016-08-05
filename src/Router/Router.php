@@ -26,8 +26,13 @@ class Router extends SimoxServiceBase
     /**
      * Helper function to create a route
      */
-    private function _createRoute( $uri, $controller_action )
+    private function _createRoute( $uri, $controller_action = null )
     {
+        /**
+         * Passing the uri to the url service to make sure the uri:s have a consistent format
+         */
+        $uri = $this->url->get( $uri . "/" );
+
         $route = new Route( $uri );
         
         if ( isset($controller_action) )
@@ -87,20 +92,26 @@ class Router extends SimoxServiceBase
     public function handle( $request_uri )
     {
         /**
-         * Remove the base uri from the request uri
+         * If uri prefix is set
          */
-        $request_uri = str_replace( $this->url->getUriPrefix(), "", $request_uri );
-        
-        /**
-         * If the base uri replaces the entire request uri
-         * (If base uri equals request uri)
-         */
-        if ( $request_uri == null )
+        if ( $this->url->getUriPrefix() != null )
         {
-            $request_uri = "/";
+            /**
+             * Remove the uri prefix from the request uri
+             */
+            $request_uri = str_replace( $this->url->getUriPrefix(), "", $request_uri );
+
+            /**
+             * If the uri prefix replaces the entire request uri
+             * (If uri prefix equals request uri)
+             */
+            if ( $request_uri == null )
+            {
+                $request_uri = "/";
+            }
         }
         
-        $request_route = new Route( $request_uri );
+        $request_route = $this->_createRoute( $request_uri );
         
         $request_route_uri_fragments = explode( "/", $request_route->getUri() );
         
