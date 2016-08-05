@@ -49,7 +49,7 @@ class Tag extends SimoxServiceBase
     /* ===== LINKS ===== */
     
     /**
-     * Creates an HTML A tag using the Url Simox service
+     * Creates an HTML anchor tag using the Url Simox service
      *
      * <code>
      * <p>Hello, my name is Simon. Click <?php $this->tag->linkTo( "/blog/", "here" ); ?> to read my blog!</p>
@@ -58,18 +58,16 @@ class Tag extends SimoxServiceBase
      * 
      * @param string $path
      * @param string $text
-     * @param boolean $local_path
+     * @param boolean $is_local_path
      */
-    public function linkTo( $path, $text, $local_path = true )
+    public function linkTo( $path, $text, $is_local_path = true )
     {
-        $uri_prefix = "";
-        
-        if ( $local_path )
+        if ( $is_local_path )
         {
-            $uri_prefix = $this->url->getUriPrefix();
+            $path = $this->url->get( $path );
         }
 		
-        $link = "<a href='$uri_prefix$path'>$text</a>";
+        $link = "<a href='$path'>$text</a>";
 		
         return $link;
     }
@@ -83,9 +81,9 @@ class Tag extends SimoxServiceBase
      */
 	public function image( $path, $alt, $options = array() )
 	{
-        $uri_prefix = $this->url->getUriPrefix();
+        $path = $this->url->get( $path );
         
-		$image_tag = "<img src='". $uri_prefix . $path ."'";
+		$image_tag = "<img src='". $path ."'";
         $image_tag .= " alt='". $alt ."'";
 		
         if ( isset($options["style"]) )
@@ -109,11 +107,14 @@ class Tag extends SimoxServiceBase
      * @param boolean $local_path
      * @return string 
      */
-	public function stylesheetLink( $path, $local_path = true )
+	public function stylesheetLink( $path, $is_local_path = true )
 	{
-        $stylesheet_path = ($local_path ? $this->url->getUriPrefix() : "") . $path;
+        if ( $is_local_path )
+        {
+            $path = $this->url->get( $path );
+        }
         
-        $stylesheet_tag = "<link href='" . $stylesheet_path . "' rel='stylesheet' type='text/css'>";
+        $stylesheet_tag = "<link href='" . $path . "' rel='stylesheet' type='text/css'>";
         
         return $stylesheet_tag;
 	}
@@ -124,11 +125,14 @@ class Tag extends SimoxServiceBase
      * @param boolean $local_path
      * @return string
      */
-    public function javascriptInclude( $path, $local_path = true )
+    public function javascriptInclude( $path, $is_local_path = true )
     {
-        $javascript_path = ($local_path ? $this->url->getUriPrefix() : "") . $path;
+        if ( $is_local_path )
+        {
+            $path = $this->url->get( $path );
+        }
         
-        $javascript_tag = "<script src='" . $javascript_path . "'></script>";
+        $javascript_tag = "<script src='" . $path . "'></script>";
         
         return $javascript_tag;
     }
