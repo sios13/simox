@@ -6,15 +6,24 @@ class Url extends SimoxServiceBase
     private $_root_path;
     
     /**
-     * Base uri is prepended to all resources (css, images, links..)
+     * Uri prefix is prepended to all resources (css, images, links..)
      */
 	private $_uri_prefix;
 	
 	public function __construct()
     {
-        $this->_uri_prefix = "/";
+        $this->_uri_prefix = null;
         
-        $this->_root_path = realpath(__DIR__ . "/../../../../");
+        $this->_root_path = realpath( __DIR__ . "/../../../../" );
+    }
+
+    /**
+     * Returns a formatted uri.
+     * Gives all uri:s a consistent format.
+     */
+    public function _format( $uri )
+    {
+        return preg_replace( "#/+#", "/", "/" . $uri );
     }
     
     public function getRootPath()
@@ -29,13 +38,11 @@ class Url extends SimoxServiceBase
      */
 	public function setUriPrefix( $uri_prefix )
 	{
-        $uri_prefix = preg_replace( "#/+#", "/", "/" . $uri_prefix . "/" );
-        
-		$this->_uri_prefix = $uri_prefix;
+		$this->_uri_prefix = $this->_format( $uri_prefix . "/" );
 	}
 	
     /**
-     * Returns the base uri
+     * Returns the uri prefix
      * 
      * @return string
      */
@@ -45,13 +52,13 @@ class Url extends SimoxServiceBase
 	}
     
     /**
-     * Appends a given path to the base uri
+     * Returns a given path appended to the uri prefix
      * 
      * @param string $path
      * @return string
      */
     public function get( $path )
     {
-        return preg_replace( "#/+#", "/", $this->getUriPrefix() . $path );
+        return $this->_format( $this->getUriPrefix() . $path );
     }
 }
