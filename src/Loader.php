@@ -14,13 +14,13 @@ class Loader extends SimoxServiceBase
     }
     
     /**
-     * Directories are registered relative to the project root path
+     * Directories are registered relative to the project public folder
      */
     public function registerDirs( $dirs )
     {
         foreach( $dirs as $dir )
         {
-            $this->registered_directories[] = $this->url->getRootPath() . DIRECTORY_SEPARATOR . $dir;
+            $this->registered_directories[] = $this->url->getRootPath() . "/public/" . $dir;
         }
     }
 
