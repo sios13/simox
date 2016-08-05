@@ -21,7 +21,8 @@
                 "src/",
                 "src/Config/",
                 "src/Database/",
-                "src/Router/"
+                "src/Router/",
+                "src/Events"
             ]
         }
     }
