@@ -3,22 +3,20 @@ namespace Simox\Router;
 
 class Route
 {
+    private $_uri;
+
     private $_controller_name;
     
     private $_action_name;
     
     private $_params;
     
-    private $_uri;
-    
     public function __construct( $uri = null )
     {
         if ( isset($uri) )
         {
-            $uri = preg_replace( "#/+#", "/", "/" . $uri . "/" );
+            $this->setUri( $uri );
         }
-        
-        $this->_uri = $uri;
     }
     
     public function getUri()
@@ -39,6 +37,11 @@ class Route
     public function getParams()
     {
         return $this->_params;
+    }
+
+    public function setUri( $uri )
+    {
+        $this->_uri = $uri;
     }
     
     public function setControllerName( $controller_name )
