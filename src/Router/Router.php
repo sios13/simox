@@ -71,7 +71,7 @@ class Router extends SimoxServiceBase
     }
     
     /**
-     * 
+     * Returns a route uri given controller name and action name
      */
     public function reverseRoute( $controller_name, $action_name )
     {
