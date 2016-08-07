@@ -30,8 +30,8 @@ class Response extends SimoxServiceBase
         {
             $uri = $this->router->reverseRoute( $params["controller"], $params["action"] );
         }
-        
-        $this->setStatusCode( 302, "Location: http://" . $this->request->getServer("HTTP_HOST") . $this->url->get($uri) );
+
+        $this->setStatusCode( 302, "Location: http://" . $this->request->getServer("HTTP_HOST") . $uri );
     }
     
     public function sendHeaders()
