@@ -1,7 +1,7 @@
 <?php
 namespace Simox;
 
-class View extends SimoxServiceBase
+class View extends SimoxServiceBase implements Events\EventsAwareInterface
 {
     private $_content;
     
@@ -9,11 +9,11 @@ class View extends SimoxServiceBase
     
     private $_view_levels;
     
-    private $_output_callable;
-    
     private $_cache_service_name;
     
     private $_render_completed;
+
+    private $_events_manager;
     
     public function __construct()
 	{
@@ -60,6 +60,16 @@ class View extends SimoxServiceBase
         );
 	}
     
+    public function setEventsManager( Events\Manager $events_manager )
+    {
+        $this->_events_manager = $events_manager;
+    }
+    
+    public function getEventsManager()
+    {
+        return $this->_events_manager;
+    }
+    
     public function __set( $name, $value )
     {
         $this->setVar( $name, $value );
@@ -71,11 +81,11 @@ class View extends SimoxServiceBase
     }
     
     /**
-     * Set the views dir relative to the root path
+     * Set the views dir relative to the public folder
      */
     public function setViewsDir( $views_dir )
     {
-        $this->_views_dir = $this->url->getRootPath() . $views_dir;
+        $this->_views_dir = $this->url->get( $views_dir );
     }
     
     /**
@@ -118,14 +128,6 @@ class View extends SimoxServiceBase
     }
     
     /**
-     * Set a callable to filter output
-     */
-    public function setOutputCallable( $callable )
-    {
-        $this->_output_callable = $callable;
-    }
-    
-    /**
      * Enables caching.
      */
     public function enableCache ( $options = null )
@@ -145,6 +147,8 @@ class View extends SimoxServiceBase
     
     public function render()
     {
+        $this->_checkViewsExist();
+
         ob_start();
         
         $this->getContent();
@@ -153,14 +157,39 @@ class View extends SimoxServiceBase
         
         ob_end_clean();
         
-        if ( isset($this->_output_callable) )
-        {
-            $content = call_user_func( $this->_output_callable, $content );
-        }
-        
-       $this->_content = $content;
+        $this->setContent( $content );
        
-       $this->_render_completed = true;
+        $this->_render_completed = true;
+
+        /**
+         * Calling after render listener
+         */
+        if ( is_object($this->_events_manager) )
+        {
+            $this->_events_manager->fire( "dispatch:afterRender", $this );
+        }
+    }
+
+    /**
+     * Private function. Checks the enabled view levels and makes sure the attached view exists.
+     */
+    private function _checkViewsExist()
+    {
+        foreach ( $this->_view_levels as $view_level )
+        {
+            if ( !$view_level["is_disabled"] )
+            {
+                if ( !file_exists($this->_views_dir . $view_level["file_name"] . ".phtml") )
+                {
+                    throw new \Exception( "View '". $view_level["file_name"] .".phtml' does not exist." );
+                }
+            }
+        }
+    }
+
+    public function setContent( $content )
+    {
+        $this->_content = $content;
     }
     
     /**
