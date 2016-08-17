@@ -1,8 +1,14 @@
 <?php
 namespace Simox;
 
-class Dispatcher extends SimoxServiceBase implements Events\EventsAwareInterface
+use Simox\DI\DIAwareInterface;
+use Simox\Events\EventsAwareInterface;
+use Simox\Events\Manager as EventsManager;
+
+class Dispatcher implements DIAwareInterface, EventsAwareInterface
 {
+    private $_di;
+
     private $_route;
 	
 	private $_events_manager;
@@ -17,10 +23,26 @@ class Dispatcher extends SimoxServiceBase implements Events\EventsAwareInterface
 
     public function __construct()
     {
-		$this->was_forwarded = false;
+        $this->_di = null;
+
+        $this->_route = null;
+
+        $this->_events_manager = null;
+
+		$this->_was_forwarded = false;
+    }
+
+    public function setDI( $di )
+    {
+        $this->_di = $di;
+    }
+
+    public function getDI()
+    {
+        return $this->_di;
     }
     
-	public function setEventsManager( Events\Manager $events_manager )
+	public function setEventsManager( EventsManager $events_manager )
 	{
 		$this->_events_manager = $events_manager;
 	}
@@ -59,19 +81,21 @@ class Dispatcher extends SimoxServiceBase implements Events\EventsAwareInterface
      */
     private function _throwDispatchException( $message, $exception_code = 0 )
     {
+        $response = $this->_di->getService( "response" );
+
         /**
          * Sets a 404 header
          */
-        $this->response->setStatusCode( 404, "Not found" );
+        $response->setStatusCode( 404, "Not found" );
         
         $exception = new \Exception( $message, $exception_code );
         
 		if ( is_object($this->_events_manager) )
         {
             /**
-             * If the event returns false, exit early and don't throw exception
+             * If the event returns false -> exit and don't throw exception
              */
-            if ( $this->_events_manager->fire( "dispatch:beforeException", $this, array("exception" => $exception) ) === false )
+            if ( $this->_events_manager->fire( "dispatch:beforeException", $this, array("exception" => $exception) ) == false )
             {
                 return false;
             }
@@ -133,17 +157,19 @@ class Dispatcher extends SimoxServiceBase implements Events\EventsAwareInterface
                 {
                     continue;
                 }
+
                 break;
             }
             
-            $controller = new $controller_name();
+            $controller_instance = new $controller_name();
             
-            if ( !method_exists($controller, $action_name) )
+            if ( !method_exists($controller_instance, $action_name) )
             {
                 if ( $this->_throwDispatchException( $action_name . "Action action does not exist in " . $controller_name . ".", self::EXCEPTION_ACTION_NOT_FOUND ) == false )
                 {
                     continue;
                 }
+
                 break;
             }
             
@@ -164,12 +190,14 @@ class Dispatcher extends SimoxServiceBase implements Events\EventsAwareInterface
                 }
             }
             
-            $controller->initialize();
+            $controller_instance->setDI( $this->_di );
+
+            $controller_instance->initialize();
             
 			/**
              * Calling action in controller with params
              */
-			call_user_func_array( array($controller, $action_name), $params );
+            call_user_func_array( array($controller_instance, $action_name), $params );
 			
 			/**
              * If there was a forward in the action
