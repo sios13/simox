@@ -1,13 +1,27 @@
 <?php
 namespace Simox;
 
-class Response extends SimoxServiceBase
+use Simox\DI\DIAwareInterface;
+
+class Response implements DIAwareInterface
 {
+    private $_di;
+
     private $_content;
     
     private $_headers;
     
 	public function __construct() {}
+
+    public function setDI( $di )
+    {
+        $this->_di = $di;
+    }
+
+    public function getDI()
+    {
+        return $this->_di;
+    }
     
     public function setContent( $content )
     {
@@ -26,12 +40,16 @@ class Response extends SimoxServiceBase
     
     public function redirect( $params )
     {
+        $router = $this->_di->getService( "router" );
+
+        $request = $this->_di->getService( "request" );
+
         if ( is_array($params) )
         {
-            $uri = $this->router->reverseRoute( $params["controller"], $params["action"] );
+            $uri = $router->reverseRoute( $params["controller"], $params["action"] );
         }
 
-        $this->setStatusCode( 302, "Location: http://" . $this->request->getServer("HTTP_HOST") . $uri );
+        $this->setStatusCode( 302, "Location: http://" . $request->getServer("HTTP_HOST") . $uri );
     }
     
     public function sendHeaders()
