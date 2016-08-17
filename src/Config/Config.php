@@ -1,7 +1,7 @@
 <?php
 namespace Simox;
 
-class Config extends SimoxServiceBase implements \ArrayAccess
+class Config implements \ArrayAccess
 {
 	public function __construct( $config_array = array() )
     {
