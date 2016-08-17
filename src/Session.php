@@ -1,7 +1,7 @@
 <?php
 namespace Simox;
 
-class Session extends SimoxServiceBase
+class Session
 {
 	public function __construct() {}
     
@@ -18,7 +18,8 @@ class Session extends SimoxServiceBase
      */
     public function destroy()
     {
-        $_SESSION = Array();
+        $_SESSION = array();
+
 		session_destroy();
     }
 	
@@ -44,9 +45,7 @@ class Session extends SimoxServiceBase
 		{
 			return $_SESSION[$key];
 		}
-		else
-		{
-			return false;
-		}
+        
+		return null;
 	}
 }
