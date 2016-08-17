@@ -1,8 +1,12 @@
 <?php
 namespace Simox;
 
-class Loader extends SimoxServiceBase
+use Simox\DI\DIAwareInterface;
+
+class Loader implements DIAwareInterface
 {
+    private $_di;
+
     /**
      * The autoloader will search the registered directories
      */
@@ -10,17 +14,29 @@ class Loader extends SimoxServiceBase
     
     public function __construct()
     {
+        $this->_di = null;
+
         $this->registered_directories = array();
+    }
+
+    public function setDI( $di )
+    {
+        $this->_di = $di;
+    }
+
+    public function getDI()
+    {
+        return $this->_di;
     }
     
     /**
-     * Directories are registered relative to the project public folder
+     * Directories are registered relative to the project root
      */
     public function registerDirs( $dirs )
     {
         foreach( $dirs as $dir )
         {
-            $this->registered_directories[] = $this->url->getRootPath() . "/public/" . $dir;
+            $this->registered_directories[] = $dir;
         }
     }
 
@@ -29,12 +45,18 @@ class Loader extends SimoxServiceBase
      */
     public function register()
     {
-        spl_autoload_register( function($name) {
+        $url = $this->_di->getService( "url" );
+
+        $base_path = $url->getRootPath();
+
+        spl_autoload_register( function($file_name) use ($base_path) {
             foreach ( $this->registered_directories as $dir )
             {
-                if ( file_exists($dir . DIRECTORY_SEPARATOR . $name . ".php") )
+                $file_path = $base_path . DIRECTORY_SEPARATOR . $dir . DIRECTORY_SEPARATOR . $file_name . ".php";
+                
+                if ( file_exists($file_path) )
                 {
-                    include($dir . DIRECTORY_SEPARATOR . $name . ".php");
+                    return include($file_path);
                 }
             }
         } );
