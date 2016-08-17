@@ -1,20 +1,18 @@
 <?php
 namespace Simox;
 
-class Request extends SimoxServiceBase
+class Request
 {
     public function __construct() {}
     
 	public function isPost()
 	{
-		if ($_SERVER["REQUEST_METHOD"] == "POST")
+		if ( $_SERVER["REQUEST_METHOD"] == "POST" )
 		{
 			return true;
 		}
-		else
-		{
-			return false;
-		}
+
+		return false;
 	}
 	
 	public function getPost( $name )
@@ -23,10 +21,8 @@ class Request extends SimoxServiceBase
 		{
 			return $_POST[$name];
 		}
-		else
-		{
-			return false;
-		}
+	
+		return false;
 	}
     
     public function getServer( $name )
@@ -35,10 +31,8 @@ class Request extends SimoxServiceBase
 		{
 			return $_SERVER[$name];
 		}
-		else
-		{
-			return false;
-		}
+	
+		return false;
     }
     
     public function getRequestUri()
