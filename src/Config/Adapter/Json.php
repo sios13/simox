@@ -1,7 +1,7 @@
 <?php
 namespace Simox\Config\Adapter;
 
-use Phalcon\Config
+use Phalcon\Config;
 
 class Json extends Config
 {
