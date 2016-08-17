@@ -1,10 +1,13 @@
 <?php
 namespace Simox;
 
+use Simox\DI\DIAwareInterface;
 use Simox\Router\Route;
 
-class Router extends SimoxServiceBase
+class Router implements DIAwareInterface
 {
+    private $_di;
+
     private $_routes;
     
     private $_route;
@@ -17,6 +20,16 @@ class Router extends SimoxServiceBase
         
         $this->_route = new Route();
     }
+
+    public function setDI( $di )
+    {
+        $this->_di = $di;
+    }
+
+    public function getDI()
+    {
+        return $this->_di;
+    }
     
     public function getRoute()
     {
@@ -28,11 +41,6 @@ class Router extends SimoxServiceBase
      */
     private function _createRoute( $uri, $controller_action = null )
     {
-        /**
-         * Passing the uri to the url service to make sure the uri:s have a consistent format
-         */
-        $uri = $this->url->get( $uri . "/" );
-
         $route = new Route( $uri );
         
         if ( isset($controller_action) )
@@ -91,15 +99,19 @@ class Router extends SimoxServiceBase
      */
     public function handle( $request_uri )
     {
+        $url = $this->_di->getService( "url" );
+
+        $uri_prefix = $url->getUriPrefix();
+
         /**
          * If uri prefix is set
          */
-        if ( $this->url->getUriPrefix() != null )
+        if ( isset($uri_prefix) )
         {
             /**
              * Remove the uri prefix from the request uri
              */
-            $request_uri = str_replace( $this->url->getUriPrefix(), "", $request_uri );
+            $request_uri = str_replace( $uri_prefix, "", $request_uri );
 
             /**
              * If the uri prefix replaces the entire request uri
@@ -112,11 +124,21 @@ class Router extends SimoxServiceBase
         }
         
         $request_route = $this->_createRoute( $request_uri );
-        
+
+        /**
+         * Passing the uri to the get function in the url service to make sure the uri:s have a consistent format
+         */
+        $request_route->setUri( $url->get( $request_route->getUri() ) );
+
         $request_route_uri_fragments = explode( "/", $request_route->getUri() );
         
         foreach ($this->_routes as $route)
         {
+            /**
+             * Passing the uri to the get function in the url service to make sure the uri:s have a consistent format
+             */
+            $route->setUri( $url->get( $route->getUri() ) );
+
             $route_uri_fragments = explode( "/", $route->getUri() );
             
             /**
@@ -131,27 +153,34 @@ class Router extends SimoxServiceBase
             $params = array();
             
             /**
-             * Checks if every fragment of the uris are the same
+             * Compare every fragment of the uris
              */
             for ($i = 0; $i < count($route_uri_fragments); $i++)
             {
-                if ( $route_uri_fragments[$i] ==  "{param}" )
+                /**
+                 * Parameters are not compared
+                 */
+                if ( $route_uri_fragments[$i] == "{param}" )
                 {
                     $params[] = $request_route_uri_fragments[$i];
                     continue;
                 }
                 
+                /**
+                 * If a fragment is not equal -> continue to next route
+                 */
                 if ( $route_uri_fragments[$i] != $request_route_uri_fragments[$i] )
                 {
                     continue 2;
                 }
             }
             
-            $request_route->setControllerName( $route->getControllerName() );
-            $request_route->setActionName( $route->getActionName() );
-            $request_route->setParams( $params );
-            
-            $this->_route = $request_route;
+            /**
+             * We have a match!
+             */
+            $this->_route->setControllerName( $route->getControllerName() );
+            $this->_route->setActionName( $route->getActionName() );
+            $this->_route->setParams( $params );
             
             return;
         }
