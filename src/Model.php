@@ -1,7 +1,9 @@
 <?php
 namespace Simox;
 
-abstract class Model extends SimoxServiceBase
+use Simox\DI\DIAwareInterface;
+
+abstract class Model
 {
     /**
      * Name of the table attached to this model
@@ -116,6 +118,8 @@ abstract class Model extends SimoxServiceBase
      */
     public static function find( $sub_sql = null, $params = null )
     {
+        $di = DI::getDefault();
+
         /**
          * Load parameters form $params
          */
@@ -128,7 +132,7 @@ abstract class Model extends SimoxServiceBase
         /**
          * Build the query, bind and fetch the resultset
          */
-        $query = Simox::getService("database")->buildQuery( $table_name, "find", array("sub_sql" => $sub_sql) );
+        $query = $di->getService("database")->buildQuery( $table_name, "find", array("sub_sql" => $sub_sql) );
         
         $query->execute( $bind );
         
@@ -180,6 +184,10 @@ abstract class Model extends SimoxServiceBase
      */
     public function save()
     {
+        $di = DI::getDefault();
+
+        $database = $di->getService( "database" );
+
         /**
          * Decide if we should update or insert
          * (if we know the record exists in the database...)
@@ -189,7 +197,7 @@ abstract class Model extends SimoxServiceBase
             /**
              * Retrieve a query from the query builder
              */
-            $query = $this->database->buildQuery( $this->_table_name, "update", array("columns" => $this->_columns) );
+            $query = $database->buildQuery( $this->_table_name, "update", array("columns" => $this->_columns) );
             
             /**
              * Create an array with the model attributes (binding parameters)
