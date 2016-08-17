@@ -9,32 +9,45 @@ class Manager
 	{
 		$this->_events = array();
 	}
-    
-    public function _explodeEventName( $event_name )
-    {
-        $target = explode( ":", $event_name );
-        
-        return array( "component_name" => $target[0], "task_name" => $target[1] );
-    }
 	
-	public function attach( $event_name, $plugin )
+	public function attach( $event_name, $plugin_definition )
 	{
-		$this->_events[$event_name] = $plugin;
+		$this->_events[$event_name] = $plugin_definition;
 	}
 	
 	public function fire( $event_name, $component, $params = null )
 	{
         if ( isset($this->_events[$event_name]) )
         {
-            $target = $this->_explodeEventName( $event_name );
+            $plugin_definition = $this->_events[$event_name];
             
-            if ( method_exists($this->_events[$event_name], $target["task_name"]) )
+            if ( $plugin_definition instanceof \Closure )
             {
-                return $this->_events[$event_name]->$target["task_name"]($component, $params);
+                /**
+                 * If the plugin definition is a closure -> run the definition
+                 */
+                $plugin_definition( $component, $params );
+
+                return;
             }
-            else if ( is_callable($this->_events[$event_name]) )
+            else if ( gettype($plugin_definition) == "object" )
             {
-                return call_user_func_array( $this->_events[$event_name], array($component, $params) );
+                /**
+                 * If the definition we need to find the function name from the event name
+                 */
+                $event_name = explode( ":", $event_name );
+                $component_name = $event_name[0];
+                $event_function_name = $event_name[1];
+
+                if ( method_exists($plugin_definition, $event_function_name) )
+                {
+                    /**
+                     * Run the function name in the definition
+                     */
+                    $plugin_definition->$event_function_name( $component, $params );
+                }
+
+                return;
             }
         }
 	}
