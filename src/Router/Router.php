@@ -9,16 +9,20 @@ class Router implements DIAwareInterface
     private $_di;
 
     private $_routes;
-    
-    private $_route;
+
+    private $_match_route;
     
     private $_not_found_route;
     
     public function __construct()
     {
+        $this->_di = null;
+
         $this->_routes = array();
-        
-        $this->_route = new Route();
+
+        $this->_match_route = null;
+
+        $this->_not_found_route = null;
     }
 
     public function setDI( $di )
@@ -30,10 +34,13 @@ class Router implements DIAwareInterface
     {
         return $this->_di;
     }
-    
-    public function getRoute()
+
+    /**
+     * Returns the match route
+     */
+    public function getMatchRoute()
     {
-        return $this->_route;
+        return $this->_match_route;
     }
     
     /**
@@ -95,7 +102,7 @@ class Router implements DIAwareInterface
     }
     
     /**
-     * Match a request uri with the route uris
+     * Match a request uri with the route uris registered in this service
      */
     public function handle( $request_uri )
     {
@@ -122,7 +129,7 @@ class Router implements DIAwareInterface
                 $request_uri = "/";
             }
         }
-        
+
         $request_route = $this->_createRoute( $request_uri );
 
         /**
@@ -155,7 +162,7 @@ class Router implements DIAwareInterface
             /**
              * Compare every fragment of the uris
              */
-            for ($i = 0; $i < count($route_uri_fragments); $i++)
+            for ( $i = 0; $i < count($route_uri_fragments); $i++ )
             {
                 /**
                  * Parameters are not compared
@@ -174,20 +181,32 @@ class Router implements DIAwareInterface
                     continue 2;
                 }
             }
+
+            $route->setParams( $params );
             
             /**
              * We have a match!
              */
-            $this->_route->setControllerName( $route->getControllerName() );
-            $this->_route->setActionName( $route->getActionName() );
-            $this->_route->setParams( $params );
-            
+            $this->_match_route = $route;
+
             return;
+
         }
         
+        /**
+         * No match :(
+         * If not found route has been set -> set as out match route
+         */
         if ( isset($this->_not_found_route) )
         {
-            $this->_route = $this->_not_found_route;
+            $this->_match_route = $this->_not_found_route;
+
+            return;
         }
+
+        /**
+         * With no other options, we set the match route to a default route
+         */
+        $this->_match_route = new Route();
     }
 }
