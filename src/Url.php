@@ -1,8 +1,13 @@
 <?php
 namespace Simox;
 
-class Url extends SimoxServiceBase
+use Simox\DI\DIAwareInterface;
+
+class Url implements DIAwareInterface
 {
+    /**
+     * Root path point to the root folder (assuming composer!!)
+     */
     private $_root_path;
     
     /**
@@ -12,20 +17,33 @@ class Url extends SimoxServiceBase
 	
 	public function __construct()
     {
-        $this->_uri_prefix = null;
-        
         $this->_root_path = realpath( __DIR__ . "/../../../../" );
+
+        $this->_uri_prefix = null;
+    }
+
+    public function setDI( $di )
+    {
+        $this->_di = $di;
+    }
+
+    public function getDI()
+    {
+        return $this->_di;
     }
 
     /**
      * Returns a formatted uri.
-     * Gives all uri:s a consistent format.
+     * Using this all uri:s will have a consistent format.
      */
     public function _format( $uri )
     {
         return preg_replace( "#/+#", "/", "/" . $uri );
     }
     
+    /**
+     * Returns the root path
+     */
     public function getRootPath()
     {
         return $this->_root_path;
