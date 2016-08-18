@@ -1,87 +1,86 @@
 <?php
 namespace Simox;
 
-class Simox
+use Simox\DI\DIAwareInterface;
+
+class Simox implements DIAwareInterface
 {
-    private static $services = array();
+    private $_di;
     
-    public function __construct()
+    public function __construct( $di )
     {
-        self::$services = array(
-            "view"       => function() {return new View();},
-            "tag"        => function() {return new Tag();},
-            "url"        => function() {return new Url();},
-            "dispatcher" => function() {return new Dispatcher();},
-            "router"     => function() {return new Router();},
-            "session"    => function() {return new Session();},
-            "request"    => function() {return new Request();},
-            "flash"      => function() {return new Flash();},
-            "cache"      => function() {return new Cache();},
-            "response"   => function() {return new Response();},
-            "loader"     => function() {return new Loader();}
-        );
+        $this->_di = $di;
     }
-    
-    /**
-     * Sets a service
-     * 
-     * @param string $service_name name of the service
-     * @param closure $value
-     */
-    public function set( $service_name, $value )
+
+    public function setDI( $di )
     {
-        self::$services[$service_name] = $value;
+        $this->_di = $di;
     }
-    
+
+    public function getDI()
+    {
+        return $this->_di;
+    }
+
     /**
      * Overrides the php magic function __get
-     * If $var_name is a registered service, call the getService function
+     * If $var_name is a registered service in the DI -> return the service
      * 
      * @var_name string
      */
     public function __get( $var_name )
     {
-        if ( isset(self::$services[$var_name]) )
+        if ( $this->_di->hasService($var_name) )
         {
-            return self::getService( $var_name );
+            return $this->_di->getService( $var_name );
         }
     }
-    
-    /**
-     * @param string $service_name
-     * @return returns a Simox service
-     */
-    public static function getService( $service_name )
-    {
-        if ( is_callable(self::$services[$service_name]) )
-        {
-            self::$services[$service_name] = call_user_func( self::$services[$service_name] );
-        }
-        
-        return self::$services[$service_name];
-    }
-    
-    /**
-     * The router starts matching the requested url with the routes.
-     * The dispatcher handles the route result.
-     */
+
     public function handle()
     {
+        /**
+         * Register the autoloader
+         */
         $this->loader->register();
         
+        /**
+         * The router handles the request uri
+         */
         $this->router->handle( $this->request->getRequestUri() );
-        
-        $this->dispatcher->setRoute( $this->router->getRoute() );
-        
+
+        /**
+         * Set the matched route in the dispatcher
+         */
+        $this->dispatcher->setRoute( $this->router->getMatchRoute() );
+
+        /**
+         * Start the dispatch
+         */
         $this->dispatcher->dispatch();
-        
+
+        /**
+         * Render the view
+         */
         $this->view->render();
-        
+
+        /**
+         * Set the content from the view as content in the response service
+         */
         $this->response->setContent( $this->view->getContent() );
         
+        /**
+         * Send the headers
+         */
         $this->response->sendHeaders();
+
+        /**
+         * Send the cookies (NYI)
+         */
         //$this->response->sendCookies();
-        
+
+        /**
+         * Return the response service
+         */
         return $this->response;
     }
 }
