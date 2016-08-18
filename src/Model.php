@@ -1,8 +1,6 @@
 <?php
 namespace Simox;
 
-use Simox\DI\DIAwareInterface;
-
 abstract class Model
 {
     /**
@@ -225,7 +223,7 @@ abstract class Model
             /**
              * Retrieve a query from the query builder
              */
-            $query = $this->database->buildQuery( $this->_table_name, "insert", array("columns" => $this->_columns) );
+            $query = $database->buildQuery( $this->_table_name, "insert", array("columns" => $this->_columns) );
             
             /**
              * Create an array with the model attributes (binding parameters)
