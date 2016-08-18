@@ -1,23 +1,36 @@
 <?php
 namespace Simox;
 
-class View extends SimoxServiceBase implements Events\EventsAwareInterface
+use Simox\DI\DIAwareInterface;
+use Simox\Events\EventsAwareInterface;
+
+class View implements DIAwareInterface, EventsAwareInterface
 {
+    private $_di;
+
+    private $_events_manager;
+
     private $_content;
     
     private $_views_dir;
     
-    private $_view_levels;
-    
     private $_cache_service_name;
     
     private $_render_completed;
-
-    private $_events_manager;
+    
+    private $_view_levels;
     
     public function __construct()
 	{
-        $this->_views_dir = $this->url->getRootPath() . "/app/views/";
+        $this->_di = null;
+
+        $this->_events_manager = null;
+
+        $this->_content = null;
+
+        $this->_views_dir = "/app/views/";
+
+        $this->_cache_service_name = null;
         
         $this->_render_completed = false;
         
@@ -59,6 +72,16 @@ class View extends SimoxServiceBase implements Events\EventsAwareInterface
             ),
         );
 	}
+
+    public function setDI( $di )
+    {
+        $this->_di = $di;
+    }
+
+    public function getDI()
+    {
+        return $this->_di;
+    }
     
     public function setEventsManager( Events\Manager $events_manager )
     {
@@ -73,6 +96,19 @@ class View extends SimoxServiceBase implements Events\EventsAwareInterface
     public function __set( $name, $value )
     {
         $this->setVar( $name, $value );
+    }
+
+    public function __get( $var_name )
+    {
+        if ( $this->_di->hasService($var_name) )
+        {
+            return $this->_di->getService( $var_name );
+        }
+
+        if ( $var_name == "di" )
+        {
+            return $this->_di;
+        }
     }
     
     public function setVar ( $name, $value )
@@ -147,17 +183,33 @@ class View extends SimoxServiceBase implements Events\EventsAwareInterface
     
     public function render()
     {
+        $url = $this->_di->getService( "url" );
+
+        /**
+         * Prefix the views dir with the root path from the url service
+         */
+        $this->_views_dir = $url->getRootPath() . $this->_views_dir;
+
         $this->_checkViewsExist();
 
+        /**
+         * Start rendering
+         */
         ob_start();
         
         $this->getContent();
         
-        $content = ob_get_contents();
+        $render_output = ob_get_contents();
         
+        /**
+         * Stop rendering
+         */
         ob_end_clean();
-        
-        $this->setContent( $content );
+
+        /**
+         * The output from the render is set as content
+         */
+        $this->setContent( $render_output );
        
         $this->_render_completed = true;
 
