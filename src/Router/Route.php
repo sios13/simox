@@ -13,10 +13,13 @@ class Route
     
     public function __construct( $uri = null )
     {
-        if ( isset($uri) )
-        {
-            $this->setUri( $uri );
-        }
+        $this->_uri = $uri;
+
+        $this->_controller_name = null;
+
+        $this->_action_name = null;
+
+        $this->_params = array();
     }
     
     public function getUri()
@@ -68,6 +71,6 @@ class Route
     
     public function setParams( $params )
     {
-        $this->_params = $params;
+        $this->_params = isset($params) ? $params : array();
     }
 }
