@@ -4,16 +4,17 @@ namespace Simox;
 use Simox\DI\DIAwareInterface;
 use Simox\Events\EventsAwareInterface;
 use Simox\Events\Manager as EventsManager;
+use Simox\Router\Route;
 
 class Dispatcher implements DIAwareInterface, EventsAwareInterface
 {
     private $_di;
-
-    private $_route;
 	
 	private $_events_manager;
 	
 	private $_was_forwarded;
+
+    private $_route;
     
     const EXCEPTION_CYCLIC_ROUTING = 0;
     
@@ -25,11 +26,11 @@ class Dispatcher implements DIAwareInterface, EventsAwareInterface
     {
         $this->_di = null;
 
-        $this->_route = null;
-
         $this->_events_manager = null;
 
 		$this->_was_forwarded = false;
+
+        $this->_route = new Route();
     }
 
     public function setDI( $di )
@@ -51,7 +52,7 @@ class Dispatcher implements DIAwareInterface, EventsAwareInterface
 	{
 		return $this->_events_manager;
 	}
-    
+
     public function setRoute( $route )
     {
         $this->_route = $route;
@@ -113,9 +114,13 @@ class Dispatcher implements DIAwareInterface, EventsAwareInterface
      */
 	public function forward( $params )
 	{
-        $this->_route->setControllerName( $params["controller"] );
-        $this->_route->setActionName( $params["action"] );
-        $this->_route->setParams( isset($params["params"]) ? $params["params"] : array() );
+        $controller_name = $params["controller"];
+        $action_name     = $params["action"];
+        $params          = isset($params["params"]) ? $params["params"] : array();
+
+        $this->_route->setControllerName( $controller_name );
+        $this->_route->setActionName( $action_name );
+        $this->_route->setParams( $params );
         
 		$this->_was_forwarded = true;
 	}
@@ -148,8 +153,8 @@ class Dispatcher implements DIAwareInterface, EventsAwareInterface
 			}
             
             $controller_name = $this->_route->getControllerName();
-            $action_name = $this->_route->getActionName();
-            $params = $this->_route->getParams();
+            $action_name     = $this->_route->getActionName();
+            $params          = $this->_route->getParams();
             
             if ( !class_exists($controller_name) )
             {
