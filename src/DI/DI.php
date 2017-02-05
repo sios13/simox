@@ -55,7 +55,7 @@ class DI
 		}
 
 		$service_definition = $this->_services[$service_name];
-		
+
         $service_instance = call_user_func( $service_definition );
 
         /**
@@ -68,7 +68,7 @@ class DI
         }
 
         /**
-         * Set the service as a parameter, making sure we do not instance the same service twice
+         * Set the service as a property, making sure we do not instance the same service twice
          */
         $this->$service_name = $service_instance;
 

@@ -11,15 +11,15 @@ class View implements DIAwareInterface, EventsAwareInterface
     private $_events_manager;
 
     private $_content;
-    
+
     private $_views_dir;
-    
+
     private $_cache_service_name;
-    
+
     private $_render_completed;
-    
+
     private $_view_levels;
-    
+
     public function __construct()
 	{
         $this->_di = null;
@@ -31,9 +31,9 @@ class View implements DIAwareInterface, EventsAwareInterface
         $this->_views_dir = "/app/views/";
 
         $this->_cache_service_name = null;
-        
+
         $this->_render_completed = false;
-        
+
         $this->_view_levels = array(
             "MAIN_VIEW" => array(
                 "name" => "MAIN_VIEW",
@@ -82,17 +82,17 @@ class View implements DIAwareInterface, EventsAwareInterface
     {
         return $this->_di;
     }
-    
+
     public function setEventsManager( Events\Manager $events_manager )
     {
         $this->_events_manager = $events_manager;
     }
-    
+
     public function getEventsManager()
     {
         return $this->_events_manager;
     }
-    
+
     public function __set( $name, $value )
     {
         $this->setVar( $name, $value );
@@ -110,12 +110,12 @@ class View implements DIAwareInterface, EventsAwareInterface
             return $this->_di;
         }
     }
-    
+
     public function setVar ( $name, $value )
     {
         $this->$name = $value;
     }
-    
+
     /**
      * Set the views dir relative to the public folder
      */
@@ -123,7 +123,7 @@ class View implements DIAwareInterface, EventsAwareInterface
     {
         $this->_views_dir = $this->url->get( $views_dir );
     }
-    
+
     /**
      * Attach a file name to a view level, enables the view level
      */
@@ -135,7 +135,7 @@ class View implements DIAwareInterface, EventsAwareInterface
             $this->_view_levels[$view_level_name]["is_disabled"] = false;
         }
     }
-    
+
     /**
      * Sets the action view
      */
@@ -143,7 +143,7 @@ class View implements DIAwareInterface, EventsAwareInterface
     {
         $this->setViewLevel( "ACTION_VIEW", $view_level_file_name );
     }
-    
+
     /**
      * Sets the main view
      */
@@ -151,7 +151,7 @@ class View implements DIAwareInterface, EventsAwareInterface
     {
         $this->setViewLevel( "MAIN_VIEW", $view_level_file_name );
     }
-    
+
     /**
      * Disables a view level
      */
@@ -162,7 +162,7 @@ class View implements DIAwareInterface, EventsAwareInterface
             $this->_view_levels[$level_name]["is_disabled"] = true;
         }
     }
-    
+
     /**
      * Enables caching.
      */
@@ -172,15 +172,15 @@ class View implements DIAwareInterface, EventsAwareInterface
         $lifetime = isset($options["lifetime"]) ? $options["lifetime"] : 3600;
         $level = isset($options["level"]) ? $options["level"] : 1;
         $this->_cache_service_name = isset($options["service"]) ? $options["service"] : "cache";
-        
+
         $view_level_name = $this->_getViewLevelNameFromLevel( $level );
-        
+
         $this->_view_levels[$view_level_name]["cache_enabled"] = array(
             "key" => $key,
             "lifetime" => $lifetime
         );
     }
-    
+
     public function render()
     {
         $url = $this->_di->getService( "url" );
@@ -196,11 +196,11 @@ class View implements DIAwareInterface, EventsAwareInterface
          * Start rendering
          */
         ob_start();
-        
+
         $this->getContent();
-        
+
         $render_output = ob_get_contents();
-        
+
         /**
          * Stop rendering
          */
@@ -210,7 +210,7 @@ class View implements DIAwareInterface, EventsAwareInterface
          * The output from the render is set as content
          */
         $this->setContent( $render_output );
-       
+
         $this->_render_completed = true;
 
         /**
@@ -243,7 +243,7 @@ class View implements DIAwareInterface, EventsAwareInterface
     {
         $this->_content = $content;
     }
-    
+
     /**
      * Includes the files attached to the view levels.
      * Disabled view levels do not get included.
@@ -256,46 +256,46 @@ class View implements DIAwareInterface, EventsAwareInterface
         {
             return $this->_content;
         }
-        
+
         foreach ( $this->_view_levels as $view_level )
         {
             if ( $view_level["is_disabled"] )
             {
                 continue;
             }
-            
+
             $this->_view_levels[$view_level["name"]]["is_disabled"] = true;
-            
+
             if ( $view_level["cache_enabled"] != false )
             {
                 $this->getCacheContent( $view_level );
                 return;
             }
-            
+
             include( $this->_views_dir . $view_level["file_name"] . ".phtml" );
             return;
         }
     }
-    
+
     public function getCacheContent( $view_level )
     {
         $cache = $this->_cache_service_name;
-        
+
         /**
          * If the cache does not exist, create the cache
          */
         if ( !$this->$cache->exists( $view_level["cache_enabled"]["key"], $view_level["cache_enabled"]["lifetime"] ) )
         {
             $this->$cache->start( $view_level["cache_enabled"]["key"] );
-            
+
             include( $this->_views_dir . $view_level["file_name"] . ".phtml" );
-            
+
             $this->$cache->save();
         }
-        
+
         $this->$cache->get( $view_level["cache_enabled"]["key"] );
     }
-    
+
     /**
      * Returns a view level name (string) given a level (integer)
      */
@@ -309,7 +309,7 @@ class View implements DIAwareInterface, EventsAwareInterface
             }
         }
     }
-    
+
     /**
      * Returns a level (integer) given a view level name (string)
      */
