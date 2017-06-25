@@ -5,72 +5,87 @@ class Route
 {
     private $_uri;
 
-    private $_controller_name;
-    
-    private $_action_name;
-    
+    private $_controllerName;
+
+    private $_actionName;
+
     private $_params;
-    
-    public function __construct( $uri = null )
-    {
-        $this->_uri = $uri;
 
-        $this->_controller_name = null;
+    public function __construct( $options = [] )
+    {
+        /**
+         * Set the properties
+         */
+        $this->_uri            = isset($options["uri"]) ? $options["uri"] : null;
 
-        $this->_action_name = null;
+        $this->_controllerName = isset($options["controllerName"]) ? $options["controllerName"] : null;
 
-        $this->_params = array();
-    }
-    
-    public function getUri()
-    {
-        return $this->_uri;
-    }
-    
-    public function getControllerName()
-    {
-        return $this->_controller_name;
-    }
-    
-    public function getActionName()
-    {
-        return $this->_action_name;
-    }
-    
-    public function getParams()
-    {
-        return $this->_params;
+        $this->_actionName     = isset($options["actionName"]) ? $options["actionName"] : null;
+
+        $this->_params         = isset($options["params"]) ? $options["params"] : array();
+
+        /**
+         * Call the set functions for controllerName and actionName
+         * to make sure they are formatted correctly
+         */
+        $this->setControllerName( $this->_controllerName );
+
+        $this->setActionName( $this->_actionName );
     }
 
     public function setUri( $uri )
     {
         $this->_uri = $uri;
     }
-    
-    public function setControllerName( $controller_name )
+
+    public function getUri()
     {
-        $controller_name = strtolower( $controller_name );
-        
-        $controller_name = str_replace("controller", "", $controller_name);
-        
-        $controller_name = ucfirst($controller_name) . "Controller";
-        
-        $this->_controller_name = $controller_name;
+        return $this->_uri;
     }
-    
-    public function setActionName( $action_name )
+
+    /**
+     * Formats a controllerName correctly
+     * iNDeXCOntrLleR -> indexController
+     */
+    public function setControllerName( $controllerName )
     {
-        $action_name = strtolower( $action_name );
-        
-        $action_name = str_replace("action", "", $action_name);
-        
-        $action_name = $action_name . "Action";
-        
-        $this->_action_name = $action_name;
+        $controllerName = strtolower( $controllerName );
+
+        $controllerName = str_replace("controller", "", $controllerName);
+
+        $controllerName = ucfirst($controllerName) . "Controller";
+
+        $this->_controllerName = $controllerName;
     }
-    
+
+    public function getControllerName()
+    {
+        return $this->_controllerName;
+    }
+
+    public function setActionName( $actionName )
+    {
+        $actionName = strtolower( $actionName );
+
+        $actionName = str_replace("action", "", $actionName);
+
+        $actionName = $actionName . "Action";
+
+        $this->_actionName = $actionName;
+    }
+
+    public function getActionName()
+    {
+        return $this->_actionName;
+    }
+
     public function setParams( $params )
     {
         $this->_params = isset($params) ? $params : array();
+    }
+
+    public function getParams()
+    {
+        return $this->_params;
     }
 }

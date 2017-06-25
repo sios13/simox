@@ -8,21 +8,21 @@ class Router implements DIAwareInterface
 {
     private $_di;
 
-    private $_routes;
+    private $_routeDefinitions;
 
-    private $_match_route;
-    
-    private $_not_found_route;
-    
+    private $_matchRoute;
+
+    private $_notFoundRoute;
+
     public function __construct()
     {
         $this->_di = null;
 
         $this->_routes = array();
 
-        $this->_match_route = null;
+        $this->_matchRoute = null;
 
-        $this->_not_found_route = null;
+        $this->_notFoundRoute = null;
     }
 
     public function setDI( $di )
@@ -40,125 +40,127 @@ class Router implements DIAwareInterface
      */
     public function getMatchRoute()
     {
-        return $this->_match_route;
+        return $this->_matchRoute;
     }
-    
+
     /**
      * Helper function to create a route
      */
-    private function _createRoute( $uri, $controller_action = null )
+    private function _createRoute( $options )
     {
-        $route = new Route( $uri );
-        
-        if ( isset($controller_action) )
+        $url = $this->_di->getService( "url" );
+
+        /**
+         * All route uris should have the uri prefix
+         */
+        $options["uri"] = $url->getUriPrefix() . $options["uri"];
+
+        if (isset($options["controller_action"]))
         {
-            if ( is_array($controller_action) )
-            {
-                $route->setControllerName( $controller_action["controller"] );
-                $route->setActionName( $controller_action["action"] );
-            }
-            else
-            {
-                $controller_action = explode( "#", $controller_action );
-                
-                $route->setControllerName( $controller_action[0] );
-                $route->setActionName( $controller_action[1] );
-            }
+            $controller_action_exploded = explode( "#", $options["controller_action"] );
+
+            $options["controllerName"] = $controller_action_exploded[0];
+            $options["actionName"]     = $controller_action_exploded[1];
         }
-        
-        return $route;
+
+        // $uri            = $settings["uri"];
+        //
+        // $controllerName = $settings["controllerName"];
+        //
+        // $actionName     = $settings["actionName"];
+        //
+        // $params         = $settigns["params"];
+
+        return new Route($options);
     }
-    
+
     public function notFoundRoute( $uri, $controller_action )
     {
-        $this->_not_found_route = $this->_createRoute( $uri, $controller_action );
+        $this->_notFoundRoute = $this->_createRoute( $uri, $controller_action );
     }
-    
+
     /**
      * Adds a route.
-     * 
+     *
      * @param string $uri
      * @param string $target the target controller#action
      */
     public function addRoute( $uri, $controller_action )
     {
-        $this->_routes[] = $this->_createRoute( $uri, $controller_action );
+        $routeOptions = [];
+        $routeOptions["uri"] = $uri;
+        $routeOptions["controller_action"] = $controller_action;
+
+        $routeDefinition = function() use ($routeOptions) {
+            return $this->_createRoute( $routeOptions );
+        };
+
+        $this->_routeDefinitions[] = $routeDefinition;
     }
-    
+
     /**
      * Returns a route uri given controller name and action name
      */
-    public function reverseRoute( $controller_name, $action_name )
+    public function reverseRoute( $controllerName, $actionName )
     {
-        $_route = $this->_createRoute( null, array("controller" => $controller_name, "action" => $action_name) );
-        
-        foreach ( $this->_routes as $route )
+        // Create a temp route because formatting
+        $tempRoute = new Route( ["controllerName" => $controllerName, "actionName" => $actionName] );
+
+        foreach ( $this->_routeDefinitions as $routeDefinition )
         {
-            if ( $_route->getControllerName() == $route->getControllerName() && $_route->getActionName() == $route->getActionName() )
+            $route = call_user_func($routeDefinition);
+
+            if ( $tempRoute->getControllerName() == $route->getControllerName() && $tempRoute->getActionName() == $route->getActionName() )
             {
                 return $route->getUri();
             }
         }
     }
-    
+
     /**
      * Match a request uri with the route uris registered in this service
      */
-    public function handle( $request_uri )
+    public function handle( $requestUri )
     {
         $url = $this->_di->getService( "url" );
 
-        $uri_prefix = $url->getUriPrefix();
-
         /**
-         * If uri prefix is set
+         * Remove the uri prefix from the request uri
+         * (the uri prefix is added when route is created)
          */
-        if ( isset($uri_prefix) )
-        {
-            /**
-             * Remove the uri prefix from the request uri
-             */
-            $request_uri = str_replace( $uri_prefix, "", $request_uri );
+        $requestUri = str_replace( $url->getUriPrefix(), "", $requestUri );
 
-            /**
-             * If the uri prefix replaces the entire request uri
-             * (If uri prefix equals request uri)
-             */
-            if ( $request_uri == null )
-            {
-                $request_uri = "/";
-            }
-        }
-
-        $request_route = $this->_createRoute( $request_uri );
+        $request_route = $this->_createRoute( ["uri" => $requestUri] );
 
         /**
          * Passing the uri to the get function in the url service to make sure the uri:s have a consistent format
          */
-        $request_route->setUri( $url->get( $request_route->getUri() ) );
+        //$request_route->setUri( $url->get( $request_route->getUri() ) );
 
         $request_route_uri_fragments = explode( "/", $request_route->getUri() );
-        
-        foreach ($this->_routes as $route)
+
+        foreach ($this->_routeDefinitions as $routeDefinition)
         {
+            $route = call_user_func($routeDefinition);
+
             /**
              * Passing the uri to the get function in the url service to make sure the uri:s have a consistent format
              */
-            $route->setUri( $url->get( $route->getUri() ) );
+            //$route->setUri( $url->get( $route->getUri() ) );
 
             $route_uri_fragments = explode( "/", $route->getUri() );
-            
+
             /**
-             * Check if request uri and route uri has the same number of fragments. 
+             * Check if request uri and route uri has the same number of fragments.
              * If not, continue to next route.
              */
             if ( count($route_uri_fragments) != count($request_route_uri_fragments) )
             {
                 continue;
             }
-            
+
             $params = array();
-            
+
             /**
              * Compare every fragment of the uris
              */
@@ -170,9 +172,10 @@ class Router implements DIAwareInterface
                 if ( $route_uri_fragments[$i] == "{param}" )
                 {
                     $params[] = $request_route_uri_fragments[$i];
+
                     continue;
                 }
-                
+
                 /**
                  * If a fragment is not equal -> continue to next route
                  */
@@ -183,23 +186,22 @@ class Router implements DIAwareInterface
             }
 
             $route->setParams( $params );
-            
+
             /**
              * We have a match!
              */
-            $this->_match_route = $route;
+            $this->_matchRoute = $route;
 
             return;
-
         }
-        
+
         /**
          * No match :(
          * If not found route has been set -> set as out match route
          */
-        if ( isset($this->_not_found_route) )
+        if ( isset($this->_notFoundRoute) )
         {
-            $this->_match_route = $this->_not_found_route;
+            $this->_matchRoute = $this->_notFoundRoute;
 
             return;
         }
@@ -207,6 +209,6 @@ class Router implements DIAwareInterface
         /**
          * With no other options, we set the match route to a default route
          */
-        $this->_match_route = new Route();
+        $this->_matchRoute = new Route();
     }
 }

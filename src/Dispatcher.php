@@ -9,17 +9,17 @@ use Simox\Router\Route;
 class Dispatcher implements DIAwareInterface, EventsAwareInterface
 {
     private $_di;
-	
+
 	private $_events_manager;
-	
+
 	private $_was_forwarded;
 
     private $_route;
-    
+
     const EXCEPTION_CYCLIC_ROUTING = 0;
-    
+
     const EXCEPTION_CONTROLLER_NOT_FOUND = 1;
-    
+
     const EXCEPTION_ACTION_NOT_FOUND = 2;
 
     public function __construct()
@@ -42,12 +42,12 @@ class Dispatcher implements DIAwareInterface, EventsAwareInterface
     {
         return $this->_di;
     }
-    
+
 	public function setEventsManager( EventsManager $events_manager )
 	{
 		$this->_events_manager = $events_manager;
 	}
-	
+
 	public function getEventsManager()
 	{
 		return $this->_events_manager;
@@ -57,7 +57,7 @@ class Dispatcher implements DIAwareInterface, EventsAwareInterface
     {
         $this->_route = $route;
     }
-	
+
     /**
      * @return Returns the name of the controller being dispatched
      */
@@ -65,7 +65,7 @@ class Dispatcher implements DIAwareInterface, EventsAwareInterface
 	{
         return $this->_route->getControllerName();
 	}
-	
+
     /**
      * @return Returns the name of the action being dispatched
      */
@@ -73,7 +73,7 @@ class Dispatcher implements DIAwareInterface, EventsAwareInterface
 	{
         return $this->_route->getActionName();
 	}
-    
+
     /**
      * Handles the exceptions thrown in the Dispatcher.
      * The exception can be handled by the "beforeException" listener.
@@ -88,9 +88,9 @@ class Dispatcher implements DIAwareInterface, EventsAwareInterface
          * Sets a 404 header
          */
         $response->setStatusCode( 404, "Not found" );
-        
+
         $exception = new \Exception( $message, $exception_code );
-        
+
 		if ( is_object($this->_events_manager) )
         {
             /**
@@ -101,13 +101,13 @@ class Dispatcher implements DIAwareInterface, EventsAwareInterface
                 return false;
             }
 		}
-        
+
         throw $exception;
     }
-	
+
     /**
      * Tells the dispatcher to forward to another controller and action
-     * 
+     *
      * @param string $params["controller"] name of the controller
      * @param string $params["action"] name of the action
      * @param array $params["params"] parameters to the action
@@ -121,10 +121,10 @@ class Dispatcher implements DIAwareInterface, EventsAwareInterface
         $this->_route->setControllerName( $controller_name );
         $this->_route->setActionName( $action_name );
         $this->_route->setParams( $params );
-        
+
 		$this->_was_forwarded = true;
 	}
-    
+
     /**
      * Dispatch to a controller/action provided by the router
      */
@@ -137,25 +137,25 @@ class Dispatcher implements DIAwareInterface, EventsAwareInterface
         {
             $this->_events_manager->fire( "dispatch:beforeDispatch", $this );
 		}
-		
+
 		$finished = false;
-		
+
 		$number_dispatches = 0;
-		
+
 		while ( !$finished )
 		{
 			$number_dispatches++;
-			
+
 			if ( $number_dispatches == 100 )
             {
                 $this->_throwDispatchException( "Dispatch error. Cyclic routing.", self::EXCEPTION_CYCLIC_ROUTING );
 				break;
 			}
-            
+
             $controller_name = $this->_route->getControllerName();
             $action_name     = $this->_route->getActionName();
             $params          = $this->_route->getParams();
-            
+
             if ( !class_exists($controller_name) )
             {
                 if ( $this->_throwDispatchException( $controller_name . " controller class cannot be loaded.", self::EXCEPTION_CONTROLLER_NOT_FOUND ) == false )
@@ -165,9 +165,9 @@ class Dispatcher implements DIAwareInterface, EventsAwareInterface
 
                 break;
             }
-            
+
             $controller_instance = new $controller_name();
-            
+
             if ( !method_exists($controller_instance, $action_name) )
             {
                 if ( $this->_throwDispatchException( $action_name . "Action action does not exist in " . $controller_name . ".", self::EXCEPTION_ACTION_NOT_FOUND ) == false )
@@ -177,14 +177,14 @@ class Dispatcher implements DIAwareInterface, EventsAwareInterface
 
                 break;
             }
-            
+
             /**
              * Calling before execute route listener
              */
             if ( is_object($this->_events_manager) )
             {
                 $this->_events_manager->fire( "dispatch:beforeExecuteRoute", $this );
-                
+
                 /**
                  * If there was a forward in the listener
                  */
@@ -194,16 +194,16 @@ class Dispatcher implements DIAwareInterface, EventsAwareInterface
                     continue;
                 }
             }
-            
+
             $controller_instance->setDI( $this->_di );
 
             $controller_instance->initialize();
-            
+
 			/**
              * Calling action in controller with params
              */
             call_user_func_array( array($controller_instance, $action_name), $params );
-			
+
 			/**
              * If there was a forward in the action
              */
@@ -212,7 +212,7 @@ class Dispatcher implements DIAwareInterface, EventsAwareInterface
 				$this->_was_forwarded = false;
 				continue;
 			}
-			
+
 			$finished = true;
 		}
     }

@@ -6,7 +6,7 @@ use Simox\DI\DIAwareInterface;
 class Simox implements DIAwareInterface
 {
     private $_di;
-    
+
     public function __construct( $di )
     {
         $this->_di = $di;
@@ -25,7 +25,7 @@ class Simox implements DIAwareInterface
     /**
      * Overrides the php magic function __get
      * If $var_name is a registered service in the DI -> return the service
-     * 
+     *
      * @var_name string
      */
     public function __get( $var_name )
@@ -42,7 +42,7 @@ class Simox implements DIAwareInterface
          * Register the autoloader
          */
         $this->loader->register();
-        
+
         /**
          * The router handles the request uri
          */
@@ -67,7 +67,7 @@ class Simox implements DIAwareInterface
          * Set the content from the view as content in the response service
          */
         $this->response->setContent( $this->view->getContent() );
-        
+
         /**
          * Send the headers
          */

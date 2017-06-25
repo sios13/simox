@@ -25,7 +25,7 @@ class Flash implements DIAwareInterface
     {
     	return $this->_di;
     }
-	
+
 	/**
 	 * Returns the messages
 	 */
@@ -33,6 +33,9 @@ class Flash implements DIAwareInterface
 	{
 		$session = $this->_di->getService( "session" );
 
+        /**
+         * Get the messages from the session
+         */
 		$messages = $session->get( "__flash__" );
 
 		/**
@@ -48,20 +51,23 @@ class Flash implements DIAwareInterface
          */
         if ( isset($type) )
         {
-        	$messages_type = $messages[$type];
+            /**
+             * Get the messages of the type
+             */
+        	$messages_type = implode( $messages[$type] );
 
+            /**
+             * Clear the type messages in the flash session
+             */
         	$messages[$type] = array();
 
-        	/**
-        	 * Clear the type messages in the flash session
-        	 */
 			$session->set( "__flash__", $messages );
 
-    	    return implode( $messages_type );
+    	    return $messages_type;
         }
 
         /**
-         * Output all messages
+         * Create a string with all messages
          */
         $all_messages_str = "";
 
@@ -71,7 +77,7 @@ class Flash implements DIAwareInterface
         }
 
         /**
-         * Clear all the messages in the flash session
+         * When all the messages have been output -> clear all the messages in the flash session
          */
 		$session->set( "__flash__", array() );
 
@@ -80,7 +86,7 @@ class Flash implements DIAwareInterface
 
     /**
      * Private helper function to update the session.
-     * Sets the messages to the session.
+     * Sets the messages in the session.
      */
     private function _updateSession()
     {
@@ -88,7 +94,7 @@ class Flash implements DIAwareInterface
 
 		$session->set( "__flash__", $this->_messages );
     }
-	
+
 	public function success( $message )
 	{
 		$message = "<div class='successMessage'>" . $message . "</div>";
@@ -97,7 +103,7 @@ class Flash implements DIAwareInterface
 
 		$this->_updateSession();
 	}
-	
+
 	public function error( $message )
 	{
 		$message = "<div class='errorMessage'>" . $message . "</div>";
@@ -106,7 +112,7 @@ class Flash implements DIAwareInterface
 
 		$this->_updateSession();
 	}
-	
+
 	public function notice( $message )
 	{
 		$message = "<div class='noticeMessage'>" . $message . "</div>";
@@ -115,7 +121,7 @@ class Flash implements DIAwareInterface
 
 		$this->_updateSession();
 	}
-	
+
 	public function warning( $message )
 	{
 		$message = "<div class='warningMessage'>" . $message . "</div>";
