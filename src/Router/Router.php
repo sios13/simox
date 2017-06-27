@@ -74,9 +74,9 @@ class Router implements DIAwareInterface
         return new Route($options);
     }
 
-    public function notFoundRoute( $uri, $controller_action )
+    public function notFoundRoute( $controller_action )
     {
-        $this->_notFoundRoute = $this->_createRoute( $uri, $controller_action );
+        $this->_notFoundRoute = $this->_createRoute( "", $controller_action );
     }
 
     /**
