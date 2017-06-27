@@ -82,13 +82,6 @@ class Dispatcher implements DIAwareInterface, EventsAwareInterface
      */
     private function _throwDispatchException( $message, $exception_code = 0 )
     {
-        $response = $this->_di->getService( "response" );
-
-        /**
-         * Sets a 404 header
-         */
-        $response->setStatusCode( 404, "Not found" );
-
         $exception = new \Exception( $message, $exception_code );
 
 		if ( is_object($this->_events_manager) )
