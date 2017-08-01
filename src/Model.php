@@ -71,7 +71,7 @@ abstract class Model
         
         foreach ( $this->_columns as $column )
         {
-            $attributes[$column["name"]] = $this->$column["name"];
+            $attributes[$column["name"]] = $this->{$column["name"]};
         }
         
         return $attributes;
